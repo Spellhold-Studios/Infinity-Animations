@@ -1,0 +1,379 @@
+<?xml version="1.0" encoding="iso-8859-1" standalone="yes"?>
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+      <title>Infinity Animations</title>
+	  
+	  <STYLE TYPE="text/css" MEDIA=screen>
+  body  { background: #101020; color:#545471; font-family: Garamond; font-size: 16px;}
+   h1  { color: #6F7A8C; text-align: center; margin-bottom: 5px; font-variant: small-caps; font-size: 30px; }
+     h3  { color: #6F7A8C; text-align: center; margin-bottom: 40px; font-variant: normal; font-size: 12px; }
+ h5  { color: #6F7A8C; text-align: center; margin-top: 20px; margin-bottom:-20px;font-variant: normal; font-size: 12px; }
+  h2  { color: #7F8A9C; font-size: 25px; font-variant: small-caps; padding-top: 21px; padding-left: 12%; width: 80%; }
+  p { width: 80%; padding-left: 8%}
+     p.changelog  { width: 80%; padding-left: 10%; color: #6F7A8C; font-variant: normal; font-size: 12px; }
+
+  pre { width: 80%; padding-left: 8%}
+    em { font-style: italic; font-variant: small-caps; color:#747481; padding-left: 1%;}
+  em.rule {color:#6F7A8C; font-weight:bold; font-variant:normal;font-style:normal;}
+  p img {margin-left:10%;}
+  a { color: #6F7A8C}
+  a:hover { color: #7F8A9C}
+  a:visited {color: #4F5A6C}
+  h1 b {background-color:#101020;border: 1px solid #545471;opacity:0;position:absolute;left:0px;top:9px; filter: alpha(opacity = 00);}
+    h1 b:hover {opacity:1; filter: alpha(opacity = 100);}
+  </STYLE>
+  
+  <link rel="alternate stylesheet" type="text/css" title="Allergic to Purple" href="miloch.css" />
+  </head>
+  <body>
+  <h1>Infinity Animations<b>You can view this readme with a different layout if your browser supports alternate stylesheets.</b></h1>
+  <h3>(core component only)</h3>
+  <h2>I. About</h2>
+  <p>This is a patch for Throne of Bhaal v26498 executables, allowing you to assign new creature and character animation slots.
+<br><br>
+  </p>
+  <h2>II. Rules On Claiming Animation slots (read first!)</h2>
+  <p>If you'd like to add your own animation to the game, please take the time to read and follow the guidelines outlined below. The process is very simple and should not take more than a few minutes. If everyone (that includes you) can stick to these guidelines, moderation or approval of claims will not be required. <br><br>
+  <em class="rule">I. Add only what you have, not what you might need.</em><br>
+  Only make claims for animations that you already have implemented in the game. If you are in the process of developing for a mod, do NOT make claims in advance. Only finished content qualifies to be added.<br><br>
+   <em class="rule">II. Your content must be publicly available.</em><br>
+   Only content that is publicly available qualifies for an animation slot. If your mod is still in development, either wait until it is released before claiming, or upload the animation(s) in question to add your entries. Ideally, your animation files should be available as a separate archive and linked to from the Infinity Animations forum, but this is not required as long as they are otherwise openly released (in this case, you implicitly grant permission to use and redistribute them in such context however). A download link to the files in question should be posted in either case.<br><br>
+   <em class="rule">III. Check for duplicates before you make a claim.</em><br>
+   Especially where ported animations are concerned, someone else might already have added them to the game. Please do not clutter the available slots with duplicate entries that could be avoided.<br><br>
+   <em class="rule">IV. Only add animations that enrich the game.</em><br>
+   This is not as clear-cut as the other rules, but the point stands. Ask yourself if your addition really adds anything to the game before making a claim. That is, 1:1 copies of current animations would most certainly not qualify, while a new animation subtype of an existing creature might. Joke entries (such as a jumping dot animation) might qualify in the context of an appropriate mod. Use common sense.<br><br>
+   <em class="rule">V. Make sure your content is as final as possible before adding it.</em><br>
+   Smaller updates and fixes to your animations (or adding object animations, etc.) are generally okay, but please try to avoid making larger changes or complete replacements of entries you added. Just because you added them does not mean they are exclusively yours, or no one else will use them in their mods.<br><br>
+   <em class="rule">VI. Check your spelling and use clear descriptions.</em><br>
+   Animation descriptors should be in legible English, and accurately describe the animation where possible. "PINK BEHOLDER, SMALL" would be a good description, "OBSERVATEUR ROSE PETIT" or "BEH_MEGAMOD 112" (even worse) would not be desirable. Proper names such as "FALL FROM GRACE" are fine.<br><br>
+  If you've read and understood these guidelines and feel your claim qualifies read on in the next section. <em>v</em>
+  </p>
+  <h2>III. Using the Reference Picker</h2>
+  <p> <em>It is highly recommended to use the supplied tool to add an animation entry.</em> While it is possible to manually add entries, the current version of this tool is not great at recovering defective entries (which can easily occur when manually editing). Inaccurate list entries may lead to incompatibilities or conflicts that could affect other mods, potentially leading to a situation where it will have to be reverted to a pre-bugged state, animations re-added, etc. <br><br>
+  As such, this section will cover the assisted method of adding animations using the IA Reference Picker.<br><br>
+    </p>
+  <h2>IV. Adding an Animation Entry</h2>
+  <p>
+  This is a step-by-step overview of the process.<br><br>
+  <em>Step 1: Run the supplied tool from your install location of choice (see above)</em><br>
+  You should now see the main window (<em>AnimID picker</em>), giving you the clear text options of claiming an animation, browsing the current IDs, or opening the reference chart. Opening the reference chart will give you an overview of the supported animation slot types (where <em>p</em> stands for paletted, <em>np</em> stands for not paletted and <em>pnp</em> for both). If you are unsure about your animation type or would like to have the reference at hand, now would be a good time to open it.
+  <br><br>
+  <em>Step 2: Click on 'claim an animation'</em><br>
+  You should now get a large-ish text field prompting you to get the current animation list. It would be a very good idea to in fact do so.
+  <br><br>
+  <em>Step 3: Get the current list from the forums</em><br>
+  Go to the Infinity Animations forum and open the pinned <em>Animation Listings</em> topic. <a href="http://www.shsforums.net/index.php?showtopic=43502">This hyperlink should take you to the thread directly.</a> Find the last post in the topic. It should contain a codebox listing animation slots, looking sort of like this:<br></p>
+<pre>0x100d	ÆAM 	ANNAH                             	LARGE  5 Lt  BGI MONSTER LONG 4 PART unpaletted
+0x100e	ÆAN 	EMPTY                             	LARGE  5 Lp  BGI MONSTER LONG 4 PART unpaletted
+0x100f	ÆAO 	PINK BEHOLDER, SMALL              	LARGE  5 Lx  BGI MONSTER LONG 4 PART unpaletted
+0x1010	ÆAP 	EMPTY                             	LARGE  5 Lp  BGI MONSTER LONG 4 PART unpaletted
+0x1011	ÆAQ 	-----                             	LARGE  5 Lx  BGI MONSTER LONG 4 PART unpaletted
+0x1012	ÆAR 	EMPTY                             	LARGE  5 Lp  BGI MONSTER LONG 4 PART unpaletted
+0x1013	ÆAS 	THIS IS AN EXAMPLE                	LARGE  5 Lx  BGI MONSTER LONG 4 PART unpaletted</pre><p>
+  Copy the *entire list* (this is important), including all EMPTY and ----- entries, up to the last symbol (i.e. make sure you didn't forget to select the last 'd' of unpaletted of the last entry or anything like that) and paste it into the text field.<br><br>Click 'Continue' to proceed. You should see a progress window while the list is being processed.<br><br>
+  <em>Step 4: Choose animation slot type</em><br>
+  If you didn't get an error so far, chances are the list is not bugged, which is a good sign. You should now have a window with loads of buttons, listing the different animation slot types available for addition. At this point you should be *absolutely certain* of the type of slot you need for your animation (it can't be changed later). Consult the reference chart (see above) if in doubt. <br><br>Click the appropriate button to proceed.<br><br>
+   <em>Step 5: Select animation sub-properties</em><br>
+   You should now see a window called <em>Almost there...</em>. Here you can choose the specifics of your animation from available options, including foot circle size and subtype (commonly unpaletted or paletted, more for character slots) and whether your animation needs a paperdoll. <br><br>
+   <strong>Important:</strong> Your animation will only need a paperdoll if your creature is joinable or can be polymorphed into. If this is not the case, please set this option to 'no', which is the default setting. Doing so will preserve open slots for other animations. Only set this to 'yes' if it is absolutely vital to have a correct paperdoll.
+   <br><br>Note that only available options are listed (so IWD slots will only give you the 'unpaletted' subtype, for instance). Click 'Go' after you have made your choices. <br><br>Almost all combinations of the given options are supported. If you pick a combination that is not available, or all slots of the given type are claimed, you will be informed that no matching slot could be found and the program will terminate (you will have to go through the above process again). <br><br>
+   <em>Step 6: Confirm</em><br>
+   If you picked a valid configuration, the search progress bar should interrupt to show the <em>Verify</em> window, which will show you detailed informations about the candidate matching your criteria picked out for you. Verify that the given animation type, subtype, foot circle size and paperdoll options are correct. If they are, proceed with 'OK'. (If they are not, cancel and repeat the above steps.)<br><br>
+   <em>Step 7: Enter a name</em><br>
+   Enter a descriptive identifier for your animation (see the naming guidelines above). Once again, click OK to proceed. You should now see a progress bar as the tool prepares the new list.<br><br>
+   <em>Step 8: Last but not least, the most important step of them all</em><br>
+   You should now see a window called <em>New List (do not edit)</em>, along with a smaller window below it listing valid <em>ANIMATE.IDS</em> and <em>ANISND.IDS</em> entries for your animation. Ignore these for now.<br><br>
+   In the larger window you should see a list similar to the one you copied and pasted before. <strong>In all cases the list should contain more entries than it did before.</strong> For our example, let's say it looked like this:<br></p>
+   <pre>0x100d	ÆAM 	ANNAH                             	LARGE  5 Lt  BGI MONSTER LONG 4 PART unpaletted
+0x100e	ÆAN 	EMPTY                             	LARGE  5 Lp  BGI MONSTER LONG 4 PART unpaletted
+0x100f	ÆAO 	PINK BEHOLDER, SMALL              	LARGE  5 Lx  BGI MONSTER LONG 4 PART unpaletted
+0x1010	ÆAP 	EMPTY                             	LARGE  5 Lp  BGI MONSTER LONG 4 PART unpaletted
+0x1011	ÆAQ 	-----                             	LARGE  5 Lx  BGI MONSTER LONG 4 PART unpaletted
+0x1012	ÆAR 	EMPTY                             	LARGE  5 Lp  BGI MONSTER LONG 4 PART unpaletted
+0x1013	ÆAS 	THIS IS AN EXAMPLE                	LARGE  5 Lx  BGI MONSTER LONG 4 PART unpaletted
+0x683d	¢A¢A	PISCATA ROSEA                     	NORMAL 3 Ct  CHARACTER BGII WQL paletted</pre>
+   <p>
+   You need to copy and post this complete list to the <em>Animation Listings</em> thread on the Infinity Animation forums. <a href="http://www.shsforums.net/index.php?showtopic=43502">Here is the hyperlink again, for your convenience.</a> To facilitate doing so, below the listing you will find a 'Copy to clipboard' button. If you click it, its text should change to *copied* and the above list content should be ready to be pasted into the thread in your clipboard (note that this will erase your current clipboard).<br><br>
+   In order to preserve the formatting and keeping it from looking like a mess, paste the content into [codebox] [/codebox] tags. <strong>Preview your post.</strong> If your post accurately matches the list displayed in the <em>New List (do not edit)</em> window, <strong>submit it</strong>. Don't forget to upload your animation set and post it in the <a href="http://www.shsforums.net/index.php?showtopic=43503">content thread</a> if it isn't yet available.<br><br>
+   Congratulations, you have just claimed an animation entry!<br><br>
+   <em>Other things you might want to notice before hitting 'Done!'</em><br>
+   On the top of the window you should see a progress bar indicating the percentage of completely free animation entries available (so you don't feel bad about taking up animation entry space <strong>(:</strong> ). To the right of it is a button called 'batch rename files'.<br><br>You can use this button to do exactly what the label suggests. Upon clicking it, you will be able to navigate to a directory (you will be offered the last chosen directory by default). Ideally this should be a subfolder containing just your animation files with their old prefix (e.g. MBEG). <br><br>You will then be asked to enter the animation's current identifier (e.g. MBEG). All files matching the entered prefix in the selected folder will be renamed to fit the newly added animation entry (in the above example, ¢A¢A). The button will indicate the number of files renamed during the process.<br><br>
+   When you're finished with everything else, you can copy or note down the <em>ANIMATE.IDS</em> and <em>ANISND.IDS</em> from the small window below. These are the entries you're going to want in your .ids files so your animation slots show up properly in Near Infinity and other tools. If you are building an installer for your mod, you might find the WeiDU output more useful (click the appropriate button) to have them added to the game .ids files.<br><br>
+   Hitting <em>Done!</em> will quit the program.<br><br>
+   <em>On total conversions</em><br>
+   If you are modding in the context of a total conversion with no links to the original game/other mods you may skip the entire process above and keep track of your own set of references of course. Such references should not be posted in the animation listing.
+  </p>
+  <h2>V. Sound Information</h2>
+  <p>
+  Every animation slot has a few standard sounds assigned to it (walking noises, etc.). For the sake of simplicity these are all linked to existing animation slot information so, for instance, any IWD type slot added will have the same soundset. Where this is undesirable, you can change the sounds by creating a 2DA file named as the identifier of the animation (i.e. ¢A¢A.2DA for our piscata rosea animation above). You can use one of the existing ones (e.g. MAIR.2DA) as a template.
+  </p>
+  <h2>VI. Browsing Existing IDs</h2>
+  <p>The Reference Picker also allows you a more detailed overview of the currently implemented animations.<br><br>To access it, select <em>browse the current IDs</em> from the main window.<br><br>
+  You will be asked for the current animation list. Follow the instructions under <strong>Step III</strong> of "Adding an Animation Entry" (it is exactly the same).<br><br>
+  After the list has updated and been processed, you should be presented with the <em>Information</em> window. The bar at its top indicates the animation slot usage, displaying the percentage of free, partially free and taken animation slots.<br><br>
+  Partially free animation slots are available for animations with the limitation that they cannot have their own paperdoll (this is because some different animation slot types can coexist, but would have conflicting paperdoll files).<br><br>
+  To the right is a list of all animations that have been added in the scope of this mod (you might have to click on one to initialise the information). It is listed by identifier and description name. In the centre of the window, the corresponding details will be listed, while on the far left a list of all files this animation slot occupies can be found.<br><br>
+  The reference browser also supports preview icons of the slotted animations. To have them show up in the window, place a .gif file named as the slot ID in the <em>preview/</em> directory (i.e. the animation ID 0x1001 would look for 0x1001.gif). The icon will show below the slot information.<br><br>
+  Pressing 'Return' will close the information browser, returning to the main window.<br><br>
+  <em>Note:</em> The hypothetical number of available slots is not actually Infinity, but well in the thousands, so don't be concerned if it shows 100% available even if some slots are used.  
+  </p>
+    <h2>VII. Building .IDS files</h2>
+  <p>Both from the ID browser and the new animation listing, you can build .ids files by clicking <em>Build .IDS</em>.<br><br>
+Doing so will not close the previous window or stop you from interacting with it. Instead, it will open a new window displaying complete .IDS files (each in their own tab) built from the original game animations and the list you entered in Step III.<br><br>
+<em>BGII/IWD style</em><br>
+The ANIMATE.IDS listing allows you to toggle between Baldur's Gate II and Icewind Dale formatting for your own use. As the IDS is only a modding reference for NearInfinity or other related tools, it is up to personal taste whether you'd like to have list output matching standard BGII formatting (e.g. GOBLIN_AXE) or IWD's prettier spaced referencing (e.g. Goblin, Axe). Any installer output when adding animation entries will match BGII's standard format.<br><br>
+The setting is remembered.
+  </p>
+    <h2>VIII. Animation Slot Reference</h2>
+  <p>This is the information shown in the reference chart, along with (eventually more) additional information. Note that BGII animations are limited to a size of 255x255 pixels -- if you need a larger animation you will have to use one of the 4-part or dragon slots. Note that this includes equipped objects: if the object plus base animation exceeds 255x255 pixels it will not display properly, or crash.<br><br>
+  </p><h5>Baldur's Gate I types</h5><p><br>
+  <br>
+  <em class="rule">&#8258 BGI MONSTER LONG 4 PART</em><br>
+16 Directions unmirrored (10 + 6E)<br>
+G11 G11E G12 G12E G13 G13E G14 G14E // 16 Seq.<br>
+G21 G21E G22 G22E G23 G23E G24 G24E // 80 Seq.<br>
+G31 G31E G32 G32E G33 G33E G34 G34E // 48 Seq.<br>
+<br>
+This is exactly the same as the BGI MONSTER LONG animation scheme, with each of G1, G2, and G3 split into four parts.<br>
+  <br>
+  Examples: Large Wyvern, BGI Tanar'ri<br>
+  <br>
+  <em class="rule">&#8258 BGI MONSTER LONG</em><br>
+16 Directions unmirrored (10 + 6E)<br>
+G1 G1E // 16 Seq.<br>
+G2 G2E // 80 Seq.<br>
+G3 G3E // 48 Seq.<br>
+<br>
+Examples: Carrion Crawler, Small Wyvern<br>
+  <br>
+  <em class="rule">&#8258 BGI SIMPLE CASTER (BOW)</em><br>
+8 Directions unmirrored (5 + 3E)<br>
+G1 G1E // 48 Seq.<br>
+G2 G2E // 24 Seq.<br>
+  <br>
+  Optionally supports bow animations (BG1, BG1E, BG2, BG2E). Has casting animations.<br>
+  <br>
+  Examples: Sirine<br>
+  <br>
+    <em class="rule">&#8258 BGI SIMPLE CASTER (S1)</em><br>
+8 Directions unmirrored (5 + 3E)<br>
+G1 G1E // 48 Seq.<br>
+G2 G2E // 24 Seq.<br>
+  <br>
+ Optionally supports sword animations (SG1, SG1E, SG2, SG2E). Has casting animations.<br>
+ <br>
+  Examples: Ogre Mage<br>
+  <br>
+  <em class="rule">&#8258 BGI ANKHEG (currently broken)</em><br>
+8 Directions unmirrored (5 + 3E)<br>
+G1 G1E // 32 Seq.<br>
+G2 G2E // 24 Seq.<br>
+G3 G3E // 16 Seq.<br>
++D (ground effects below; DG1, DG1E...)<br>
+  <br>
+  Currently not functional, will loop the idle animation for all sequences. (I figured it would not be the most popular type of animation slot, so this may or may not change soon.)<br>
+  <br>
+  Examples: Ankheg<br>
+  <br>
+  <em class="rule">&#8258 BGI SIMPLE MONSTER</em><br>
+8 Directions unmirrored (5 + 3E)<br>
+G1 G1E // 48 Seq.<br>
+G2 G2E // 24 Seq.<br>
+<br>
+<strong>Note on paperdolls:</strong> These animation slots do support paperdolls, but their naming system might be inconsistent at this point. Try [ID]INV, [ID]0INV, [ID]1INV... one of these should work.<br><br>
+Same as the caster animations, but has extra attack animations instead of casting ones.<br>
+  <br>
+  Examples: Werewolf<br>
+  <br>
+  <em class="rule">&#8258 CHARACTER BGI</em><br>
+  8 Directions unmirrored (5 + 3E)<br>
+  A1 A1E A2 A2E A3 A3E A4 A4E A5 A5E A6 A6E SA SAE SX SXE // 8 Seq. (A1 has 16)<br>
+  CA CAE // 62/64 Seq.<br>
+  G1 G1E // 72 Seq.<br>
+  W2 W2E // 8 Seq.<br>
+  + Armour Levels (4)<br>
+  + Arbitrary (originally WP) Object anim.<br>
+  + CSHD<br>
+  <br>
+  Where CBGI is the animation identifier...<br>
+  [CBGI][1]A1 (id + armour level 1-4)<br>
+  [CBGI][1]INV<br>
+  Objects are...<br>
+  [BGI][S1]A1 (3 last letters of id + object id)<br>
+  [BGI][S1]INV<br>
+  <br>
+  Note that differing from other animation types equipping non-existent objects CRASHES for characters.<br>
+  <br>
+  Keep in mind all BGI character animations display the CSHD shadow animation.<br>
+  <br>
+  If you'd like to have an animation using existing object animations (e.g. because it's an edit of an existing animation), choose one of the CHARACTER BGI WPM/L/S animation slots with the desired size category.<br>
+  <br>
+  <br>
+  </p><h5>Baldur's Gate II types</h5><p><br>
+  <br>
+  <em class="rule">&#8258 DRAGONS (XDR)</em><br>
+  9 Directions mirrored<br>
+  9 Animation parts<br>
+  5 Animations (5: 1 split no base; 4: 2 split)<br>
+  <br>
+  Animation + Part + Split + Direction<br>
+  <br>
+  Where XDR1 is the identifier...<br>
+  [XDR1][1][9][0][2] is the first animation, 9th part (bottom right corner), first split,facing south west (third direction).<br>
+  <br>
+  Parts are arranged top left to bottom right.<br>
+  <br>
+  <em class="rule">&#8258 BGII SPLIT</em><br>
+9 Directions mirrored<br>
+G1 G11 G12 G13 G14 G15 // 54 Seq.<br>
+G2 G21 G22 G23 G24 G25 G26 // 63 Seq.<br>
+<br>
+You can add objects to these much as you would to characters. The object animations are unsplit, G1[ID] G2[ID]. As opposed to character slots, equipping a non-existent item does not crash. An item with the inventory appearance set to BW (Bow) would thus look for the animations G1BW, G2BW.<br>
+<br>
+Examples: Solar, Troll<br>
+  <br>
+  <em class="rule">&#8258 BGII SPLIT 4 PART</em><br>
+9 Directions mirrored<br>
+G11 G12 G13 G14 // 54 Seq.<br>
+G111 G121 G131 G141 // 54 Seq.<br>
+G112 G122 G132 G142 // 54 Seq.<br>
+G113 G123 G133 G143 // 54 Seq.<br>
+G114 G124 G134 G144 // 54 Seq.<br>
+G115 G125 G135 G145 // 54 Seq.<br>
+<br>
+G21 G22 G23 G24 // 63 Seq.<br>
+G211 G221 G231 G241 // 63 Seq.<br>
+G212 G222 G232 G242 // 63 Seq.<br>
+G213 G223 G233 G243 // 63 Seq.<br>
+G214 G224 G234 G244 // 63 Seq.<br>
+G215 G225 G235 G245 // 63 Seq.<br>
+G216 G226 G236 G246 // 63 Seq.<br>
+<br>
+This is essentially the same as the BGII SPLIT animation type, except split into four parts arranged as shown above.<br>
+  <br>
+  Examples: Demogorgon<br>
+  <br>
+  <em class="rule">&#8258 BGII UNSPLIT EXT.</em><br>
+9 Directions mirrored<br>
+G1 // 72 Seq.<br>
+G2 // 63 Seq.<br>
+<br>
+An expanded variant of the BGII SPLIT animation type, with all sequences in one file rather than distributed. Supports object animations as well (see above).<br>
+<br>
+Examples: Melissan, Death Tyrant<br>
+  <br>
+<em class="rule">&#8258 CHARACTER BGII</em><br>
+9 Directions mirrored<br>
+A1 A2 A3 A4 A5 A6 A7 A8 A9 SA SS SX // 9 Seq.<br>
+CA // 72 Seq.<br>
+G1 (<strong>not split</strong>) // 99 Seq.<br>
++ Armour Levels (4)<br>
++ Arbitrary (originally WQ) Object anim.  <br>
+<br>
+Where CBGT is the animation identifier...<br>
+[CBGT][1]A1 (id + armour level 1-4)<br>
+[CBGT][1]INV<br>
+Objects are...<br>
+[BGT][S1]A1 (3 last letters of id + object id)<br>
+[B<strong>P</strong>T][S1]INV <strong>(second character is forced to P!!)</strong><br>
+  <br>
+  ^ This behaviour is due to BGII animations using WQ objects with WP paperdolls. It only applies to INV files. For the character slots this P will always fall on the second unique letter (µ or ¢, with the two identifying letters remaining intact.)<br>
+  <br>
+  Note that differing from other animation types equipping non-existent objects CRASHES for characters.<br>
+  <br>
+  This animation type differs from the one used for the original game files in that I've decided not to split the G animation series. It's exactly the same content, just kept in one file (see BGII SPLIT/BGII UNSPLIT). Essentially, if you'd like a duplicate or edit of a current character animation, you will have to join the G1 G11 G12... files into a single G1 file. This is done mainly to save override clutter (and makes it easier to create content to boot).<br>
+  <br>
+  If you'd like to have an animation using existing object animations (e.g. because it's an edit of an existing animation), choose one of the CHARACTER BGII WQM/L/N/S animation slots with the desired size category.<br>
+  <br>
+    </p><h5>IWD types</h5><p><br>
+  <br>
+  <em class="rule">&#8258 IWD</em><br>
+  8 Directions unmirrored (5 + 3E)<br>
+  A1 A1E A2 A2E A3 A3E A4 A4E // 5 Seq. 8 Seq. resp.<br>
+  CA CAE // 5 Seq. 8 Seq. resp.<br>
+  DE DEE // 5 Seq. 8 Seq. resp.<br>
+  GH GHE // 5 Seq. 8 Seq. resp.<br>
+  GU GUE // 5 Seq. 8 Seq. resp.<br>
+  SC SCE // 5 Seq. 8 Seq. resp.<br>
+  SD SDE // 5 Seq. 8 Seq. resp.<br>
+  SL SLE // 5 Seq. 8 Seq. resp.<br>
+  SP SPE // 5 Seq. 8 Seq. resp.<br>
+  TW TWE // 5 Seq. 8 Seq. resp.<br>
+  WK WKE // 5 Seq. 8 Seq. resp.<br>
+  <br>
+  + Object (SA1, MA1...)<br>
+  <br>
+  IWD animations can coexist with a BGII SPLIT/UNSPLIT animation (which in turn can coexist with some 4 PART animations, etc.) for the same identifier as long as either of them does not need a paperdoll, in fact they often do so with the original game files.<br>
+  <br>
+  Any type of object can be added to an IWD slot. However, the last character of the object id is stripped off (e.g. WH becomes W).<br>
+  <br>
+  Equipping a non-existent object does not cause the game to crash, as it does with character animations.
+  
+  <br><br>
+      </p><h5>Porting suggestions</h5><p><br>
+  
+   <em class="rule">&#8258 Planescape Torment</em> <br><br>
+   PST animations generally have the following scheme:<br><br>
+5 Directions mirrored<br>
+AT1 AT2 // 5 Seq.<br>
+C2S // 5 Seq. (combat->idle)<br>
+CF1 // 5 Seq. (taunt) <br>
+(CF2)<br>
+DFB // 5 Seq. (fall)<br>
+GUP // 5 Seq. (get up)<br>
+HIT // 5 Seq. (hit)<br>
+S2C // 5 Seq. (idle->combat)<br>
+SF1 // 5 Seq. (stretch)<br>
+SP1 // 5 Seq. (spell)<br>
+SP2 // 5 Seq. (spell)<br>
+SP3 // 5 Seq. (spell)<br>
+(SP4)<br>
+STC // 5 Seq. (combat idle)<br>
+STD // 5 Seq. (idle normal)<br>
+TK1 // 5 Seq. (talk)<br>
+TK2 // 5 Seq. (talk)<br>
+TK3 // 5 Seq. (talk)<br>
+(TK4, TK5, TK6)<br><br>
+9 Directions mirrored<br>
+RUN // 9 Seq. (run)<br>
+WLK // 9 Seq. (walk)<br>
+   <br>
+   This means PST animations should be ported into BGII UNSPLIT EXT. or BGII character type slots where possible, preserving most of their various non-combat animations and their extended walking / running directions. These would be lost porting to an IWD or BGI animation slot. Since they use five directions mirrored for most animation parts, you'll have to pad them to fit accordingly, and join them into G1 & G2 files with the sequences set up properly.<br>
+  
+    
+  </p>
+  
+  <h2>IX. Manual Install</h2>
+  <p>
+  <em>&#8258 <strong>To install without the provided WeiDU installer:</em></strong>
+<br>
+i. Exe patching is done via Colin Percival's freely available tools bsdiff/bspatch available <a href="http://www.daemonology.net/bsdiff/">here</a>.<br>
+ii. Copy the <em>.patch</em> file (found in <em>infinityanimations/patch</em>) and <em>bspatch</em> to your game directory.<br>
+iii. From a command prompt enter something like:<br>
+<em>bspatch BGMain.exe BGMain_patched.exe Infinity10010043.patch</em><br>
+iv. Run the game from BGMain_patched.exe, or rename it to BGMain.exe (be sure to keep the original executable just in case). <br>
+
+<br><br><br>
+<em>&#8258 <strong>For the animation slot mapper:</em></strong>
+<br>
+extract the directory <em>Reference Picker/</em> and its contents to any location.<br><br>
+The file <em>anims.list</em> is necessary for the tool to run. <em>DO NOT MODIFY THIS FILE.</em>
+  </p>
+  
+      <h2>X. Version Changelog (core component only)</h2>
+  <p>
+  <em class="rule">(r.10010043)</em><br>
+  · fixed a bug with IWD animation slots in BGII
+  <br><br>
+  <em class="rule">(r.09102252) update</em><br>
+  · updated documentation and Reference Picker<br>
+  · added alternate stylesheet ;)
+  <br><br>
+  <em class="rule">(r.09102252)</em><br>
+  initial release
+  </p>
+  <br>
+  <br>
+  <br>
+  </body>

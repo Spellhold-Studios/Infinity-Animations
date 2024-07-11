@@ -1,0 +1,223 @@
+//DOS strings
+@1  = ~Infinity Animations~
+@2  = ~Your ANSI code page is set to a value of %t-acp%. Changing it to 1252 (Latin)
+for mod animation compatibility.~
+@3  = ~You must reboot to continue the installation. Reboot now? [Y]es [N]o~
+@4  = ~Rebooting in a few seconds. Please close all other applications.~
+@5  = ~This mod is not currently compatible with OS X. If you wish to make it so,
+please post your interest to www.shsforums.net/forum/594-infinity-animations/.
+(It may help to examine your game launcher and the contents of the existing
+patch in an editor if you have any technical expertise.)~
+@6  = ~A mod has overwritten BG2 animations in your game. Extract IA_BG2_Restores.rar
+to your infinityanimations/restore folder.~
+@7  = ~An installed mod requires IA_Base_Anims.rar extracted to your
+infinityanimations/content folder.~
+@8  = ~An installed mod requires IA_IWD.rar extracted to your
+infinityanimations/content folder.~
+@9  = ~An installed mod requires IA_BGII_IWDII.rar extracted to your
+infinityanimations/content folder.~
+@10 = ~An installed mod requires Belhifet_and_Marilith.zip extracted to your
+infinityanimations/content folder.~
+@11 = ~An installed mod requires Shadows_harpy_frostgiant.zip extracted to your
+infinityanimations/content folder.~
+@12 = ~An installed mod requires IA_NWN_01_Modron.rar and NWN_Misc_I.rar extracted
+to your infinityanimations/content folder.~
+@13 = ~An installed mod requires IA_Wh_Dr_Wyv_LoP.rar extracted to your
+infinityanimations/content folder.~
+@14 = ~NOTE: Download all content from Spellhold Studios. Each content module is at
+www.shsforums.net/index.php?autocom=downloads&showcat=98. Extract all archives
+using the "Do not extract paths" option on the Advanced tab in WinRAR. Also,
+make sure the "Destination path" on the General tab terminates in /content or
+/restore after infinityanimations (there are no subfolders beyond that).~
+@15 = ~For WinZip, make sure the "Use folder names" box is *unselected*. You should
+end up with a bunch of .bam files and no subfolders in your "content" and/or
+restore folders. Rerun this installer once you've extracted all content.~
+@16 = ~Required content missing.~
+@17 = ~BGMain.exe appears to be patched already; skipping .exe modifications ...~
+@18 = ~BGMain.exe not valid - make sure you have a ToB .exe patched to v26498!~
+@19 = ~Patching BGMain.exe to enable new animations ...~
+@20 = ~Replacing _LOW creature animations (this may take a while) ...~
+@21 = ~Patching IDS files ...~
+@22 = ~Restoring previously overwritten BG2 animations ...~
+@23 = ~Copying new animations to the game (this may take a while) ...~
+@24 = ~Correcting creature animations ...~
+@25 = ~Distinctive Genies~
+@26 = ~This component requires the main component.~
+@27 = ~IA_Fiends_Genies.rar needs to be extracted and installed with the main
+component.~
+@28 = ~Distinctive Fiends~
+@29 = ~IA_Fiends_Genies.rar, IA_IWD.rar, IA_PST_Abishai.rar,
+IA_NWN_01_Modron.rar and NWN_Misc_I.rar need to be extracted and installed
+with the main component.~
+@30 = ~Pit Fiends~
+@31 = ~IA_NWN_01_Modron.rar needs to be extracted and installed with the main
+component.~
+@32 = ~All get the NWN animation~
+@33 = ~Some get the NWN animation~
+@34 = ~IA_BGII_IWDII.rar needs to be extracted and installed with the main
+component.~
+@35 = ~Cambion/Isair Animation~
+@36 = ~All cambions~
+@37 = ~Some cambions~
+@38 = ~Alu-Fiend/Madae Animation~
+@39 = ~All alu-fiends~
+@40 = ~Some alu-fiends~
+@41 = ~Distinctive Undead~
+@42 = ~IA_Base_Anims.rar, IA_IWD.rar and Shadows_harpy_frostgiant.zip need to
+be extracted and installed with the main component.~
+@43 = ~Skeleton Warriors~
+@44 = ~IA_IWD.rar needs to be extracted and installed with the main component.~
+@45 = ~Barrow Wight animation~
+@46 = ~Skeleton animation~
+@47 = ~SkeletonA animation~
+@48 = ~Seer Animation~
+@49 = ~Some beggars and slaves~
+@50 = ~Some beggars~
+@51 = ~Some slaves~
+@52 = ~Svirfneblin Animations~
+@53 = ~Aurora's Shoes has already installed this.~
+@54 = ~IA_IWD_Svirfneblin.rar needs to be extracted and installed with the
+main component.~
+@55 = ~Animations only~
+@56 = ~Animations and sounds~
+@57 = ~More Base Animations~
+@58 = ~IA_Base_Anims.rar needs to be extracted and installed with the main
+component.~
+@59 = ~More Icewind Dale Animations~
+@60 = ~More Icewind Dale II Animations~
+@61 = ~More Neverwinter Nights Animations~
+@62 = ~IA_NWN_01_Modron.rar and NWN_Misc_I.rar need to be extracted and
+installed with the main component.~
+@63 = ~More Planescape: Torment Animations~
+@64 = ~IA_PST_Paletted.rar needs to be extracted and installed with the main
+component.~
+@65 = ~25% of relevant non-joinables~
+@66 = ~50% of relevant non-joinables~
+@67 = ~75% of relevant non-joinables~
+@68 = ~All relevant non-joinables~
+@69 = ~Moinesse's Avatars for IA~
+@70 = ~Moinesse_edits_IAised.rar needs to be extracted and installed with the main
+component.~
+@71 = ~BG1 Animations for NPCs~
+@72 = ~IA_Base_Anims.rar needs to be extracted and installed with the main component.~
+@73 = ~Patching character-based creatures (this may take a while) ...~
+@74 = ~25% of relevant creatures~
+@75 = ~50% of relevant creatures~
+@76 = ~75% of relevant creatures~
+@77 = ~Most relevant creatures~
+@78 = ~BG1 Animations for Exported PCs~
+@79 = ~Prompt for each PC~
+@80 = ~Prompt for problematic PCs~
+@81 = ~Patch all PCs without prompting~
+@82 = ~BG1 Animations for Saved Games~
+@83 = ~Prompt for each character~
+@84 = ~Prompt for problematic characters~
+@85 = ~Patch all characters without prompting~
+@86 = ~Saved Game Animation Fixer~
+@87 = ~Correct only LOW animations~
+@88 = ~Correct all animations IA has changed~
+@89 = ~is corrupt~
+@90 = ~below minimum length~
+@91 = ~header misplaced~
+@92 = ~extended structures point to header~
+@93 = ~(Invalid Offhand Item)~
+@94 = ~(Katana Proficiency)~
+@95 = ~(Scimitar Proficiency)~
+@96 = ~(Two Weapon Proficiency)~
+@97 = ~(Scimitar or Katana)~
+@98 = ~Patch~
+@99 = ~[Y/N]?~
+@100 = ~has an item or proficiency that may
+crash the game with the new animation~
+@101 = ~Patch anyway [Y/N]?~
+@102 = ~Updating .gam file in~
+@103 = ~Updating .sav file in~
+@104 = ~Fix Areas~
+@105 = ~Fix Area Creature References~
+@106 = ~Correcting area creature references (this may take a while) ...~
+@107 = ~Humanoid Animation Fixes~
+
+//Game strings
+@500 = ~Yuan-Ti Mage~
+@501 = ~Yuan-Ti~
+@502 = ~Gnoll Captain~
+@503 = ~Hobgoblin Captain~
+@504 = ~Hobgoblin Wizard~
+@505 = ~Balor~
+@506 = ~Who disturbs me?~ [T-NAB04]
+@507 = ~Rawrr!~ [T-NAB03]
+@508 = ~I will rend your soul!~ [T-NAB05]
+@509 = ~Your pain shall be eternal!~ [T-NAB06]
+@510 = ~Well... hello, my pretty!~ [T-HAG01]
+@511 = ~Your bones and blood will blanket my garden.~ [T-HAG77]
+@512 = ~Off with ye. Dead I am.~ [T-HAG90A]
+@513 = ~Do not push me!~ [T-HAG13]
+@514 = ~Wings~
+@515 = ~These soft and feathered wings seem to be fashioned in a celestial design. Though not radiating a noticeable magical aura, the wings do seem to move with their bearer in a way that defies any apparent mechanism.
+
+STATISTICS:
+
+Weight: 2~
+@516 = ~Well hello there.~ [T-ERI02A]
+@517 = ~Farewell for now.~ [T-ERI06]
+@518 = ~On your knees!~ [T-ERI01A]
+@519 = ~You are mine!~ [T-ERI01B]
+@520 = ~Rrrauugh!~ [T-ERI01C]
+@521 = ~You tempt pain that you have never dreamed of.~ [T-ERI01D]
+@522 = ~Rend their flesh! They will not need it.~ [T-ERI01E]
+@523 = ~You want to heal me. You must.~ [T-ERI10]
+@524 = ~I need to speak with you. Come here.~ [T-ERI02B]
+@525 = ~Come to my side. Help me here.~ [T-ERI02C]
+@526 = ~Oh, yes.~ [T-ERI02D]
+@527 = ~Ha! Ha-ha-ha...~ [T-ERI02E]
+@528 = ~Oh, that is very nice.~ [T-ERI05]
+@529 = ~No. No.~ [T-ERI08]
+@530 = ~Yes?~ [T-SUC02]
+@531 = ~Your death shall be beautiful!~ [T-SUC01A]
+@532 = ~Your soul shall be mine!~ [T-SUC01B]
+@533 = ~You cannot win this fight!~ [T-TIM01A]
+@534 = ~Into the flames we leap!~ [T-TIM01B]
+@535 = ~Ha ha ha ha!~ [T-TIM01C]
+@536 = ~My blood calls for yours and it *will* be satisfied.~ [T-TIM01D]
+@537 = ~Do you wish to die now? Because I can certainly arrange that.~ [T-TIM01E]
+@538 = ~Greetings.~ [T-TIM02A]
+@539 = ~Yes.~ [T-TIM02B]
+@540 = ~At your command.~ [T-TIM02C]
+@541 = ~What do we have here?~ [T-TIM02D]
+@542 = ~No.~ [T-TIM11]
+@543 = ~My magic did not work!~ [T-TIM12]
+@544 = ~Your time in this realm is over!~ [T-TIF01]
+@545 = ~Yes? I listen.~ [T-TIF02]
+@546 = ~Greater Zombie~
+@547 = ~Yes.~ [T-SVA01B]
+@548 = ~Help! Help!~ [T-SVA03B]
+@549 = ~My powers shall obliterate you!~ [T-SVA02C]
+@550 = ~Die!~ [T_SVA02D]
+@551 = ~I am wounded! Heal me!~ [T-SVA07]
+@552 = ~Good day!~ [T-SVA01A]
+@553 = ~I really need to talk to you.~ [T-SVA01C]
+@554 = ~Ho ha ha ha!~ [T-SVA01D]
+@555 = ~You're in GREAT peril if you bother me. Just you wait!~ [T-SVA08]
+@556 = ~That's the way it's done and done!~ [T-SVA09]
+@557 = ~No...~ [T-SVA10]
+@558 = ~Come and talk a while.~ [T-SVN01C]
+@559 = ~Please help me!~ [T-SVN03B]
+@560 = ~Take that!~ [T-SVN02C]
+@561 = ~Evil fall before me!~ [T_SVN02D]
+@562 = ~I am hurt!~ [T-SVN07]
+@563 = ~Hello there.~ [T-SVN01A]
+@564 = ~Yes.~ [T-SVN01B]
+@565 = ~Oh ho ho ho!~ [T-SVN01D]
+@566 = ~You're heading for a good beating, you are!~ [T-SVN08]
+@567 = ~Well look at that!~ [T-SVN09]
+@568 = ~No...~ [T-SVN10]
+@569 = ~So long!~ [T-SVA03A]
+@570 = ~Kill that scum! Get 'em good!~ [T-SVA02A]
+@571 = ~Blood and bloody hell!~ [T_SVA02B]
+@572 = ~Farewell.~ [T-SVN03A]
+@573 = ~Get 'em!~ [T-SVN02A]
+@574 = ~I will cut you down to size!~ [T_SVN02B]
+@575 = ~What do you want?~ [T-AML02A]
+@576 = ~Taste steel!~ [T-AML01A]
+@577 = ~Die as you must!~ [T-AML01B]
+@578 = ~Yes?~ [T-AML02B]

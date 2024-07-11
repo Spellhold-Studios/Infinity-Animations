@@ -1,0 +1,4491 @@
+BACKUP ~infinityanimations/backup~
+SUPPORT ~www.shsforums.net/forum/594-infinity-animations/~
+VERSION ~v5.1.2~
+README ~infinityanimations/documentation/infinityanimations.html~
+
+//! Platform variables //////////////////////////////////////////////////////
+ALWAYS
+  ACTION_IF FILE_EXISTS_IN_GAME ~fw0125.are~ BEGIN
+    OUTER_SPRINT tsu ~_~ //Initial underscores (Tutu)
+    OUTER_SPRINT tbg ~_~
+    OUTER_SPRINT ts1 ~~
+    OUTER_SPRINT tsb ~_~
+    OUTER_SPRINT tsf ~_~
+    OUTER_SPRINT tsg ~_~
+    OUTER_SPRINT tsk ~_~
+    OUTER_SPRINT tsm ~_~
+    OUTER_SPRINT tsn ~_~
+    OUTER_SPRINT tsp ~_~
+    OUTER_SPRINT tss ~_~
+    OUTER_SPRINT tst ~_~
+  END ELSE BEGIN
+    OUTER_SPRINT tsu ~~
+    OUTER_SPRINT tbg ~bg~
+    OUTER_SPRINT ts1 ~1~
+    OUTER_SPRINT tsb ~b~
+    OUTER_SPRINT tsf ~f~
+    OUTER_SPRINT tsg ~g~
+    OUTER_SPRINT tsk ~k~
+    OUTER_SPRINT tsm ~m~
+    OUTER_SPRINT tsn ~n~
+    OUTER_SPRINT tsp ~p~
+    OUTER_SPRINT tss ~s~
+    OUTER_SPRINT tst ~t~
+  END
+END
+
+//! Languages ///////////////////////////////////////////////////////////////
+AUTO_TRA ~infinityanimations/%s~
+LANGUAGE ~English~ ~english~ ~infinityanimations/english/setup.tra~
+
+//! Main component //////////////////////////////////////////////////////////
+BEGIN @1 //Infinity Animations
+
+ACTION_IF (~%WEIDU_OS%~ STRING_EQUAL_CASE ~osx~ = 1) BEGIN //if OS X
+  FAIL @5 //This mod is not currently compatible with OS X
+END
+
+OUTER_SET skip = 0 //Executable validity check
+COPY ~BGMain.exe~ ~BGMain.exe~
+  sz = SOURCE_SIZE
+  READ_LONG 0x40742c c1
+  READ_LONG 0x40a8da c2
+  PATCH_IF sz > 0x7536e6 BEGIN
+    READ_LONG 0x7536e7 c3
+  END ELSE BEGIN
+    c3 = 0
+  END
+  READ_BYTE 0x4595c9 c4
+BUT_ONLY
+
+ACTION_IF (c1 = 0x3db6d84) AND (c2 = 0xc6004c48) AND (c3 = 0x54464958) AND (c4 = 0xf9) AND (sz = 0x77a02e) BEGIN
+  OUTER_SET skip = 1
+  PRINT @17 //BGMain.exe appears to be patched already; skipping .exe modifications ...
+END ELSE BEGIN
+  ACTION_IF (c1 != 0xb48f) OR (c2 != 0x3d7c1) OR (c3 != 0x53505700) OR (sz != 0x77a02e) BEGIN
+    ACTION_IF (c1 = 0x3db6d84) AND (c2 = 0xc6004c48) AND (c3 = 0x54464958) AND (c4 = 0xfc) AND (sz = 0x77a02e) BEGIN
+      OUTER_SET skip = 0
+    END ELSE BEGIN
+      FAIL @18 //BGMain.exe not valid - make sure you have a ToB .exe patched to v26498!
+    END
+  END
+END
+
+ACTION_IF skip = 0 BEGIN
+  PRINT @19 //Patching BGMain.exe to enable new animations ...
+  COPY ~BGMain.exe~ ~BGMain.exe~
+    PATCH_INCLUDE ~infinityanimations/patch/t-exe_patch.tpp~
+  BUT_ONLY
+END
+
+PRINT @20 //Replacing _LOW creature animations (this may take a while) ...
+<<<<<<<< .../infinityanimations-inlined/t-cre_fixer.log
+Creature	Item	Slot	Issue
+>>>>>>>>
+<<<<<<<< .../infinityanimations-inlined/t-low_fix.log
+Creature	OldAnim	OldAnimText	NewAnim	NewAnimText
+>>>>>>>>
+
+COPY ~.../infinityanimations-inlined/t-cre_fixer.log~ ~infinityanimations/batch~
+     ~.../infinityanimations-inlined/t-low_fix.log~ ~infinityanimations/batch~
+
+OUTER_SPRINT t-exc ~bpdric01 bpdrif01 bpdrif02 bpdrifm1 bugarch bugbear cbbgber cbbgber1 cbbgber2 cbbgbera cbbgberb cbbgberc cbbgberd cbbgberw cbbgberx cbbgbery cbbgberz cbdrifal cbdrifml cbdrifsl cbdrimml cbdrimsl tcbugb01 tcbugb02 tcgrell ~
+
+COPY_EXISTING_REGEXP GLOB ~^.+\.cre$~ ~override~
+  PATCH_INCLUDE ~infinityanimations/lib/fj_cre_validity.tpp~
+  PATCH_IF vl BEGIN
+    SPRINT sr ~%SOURCE_RES%~
+    TO_LOWER sr
+    READ_SHORT 0x28 t-old
+    PATCH_IF (((t-old > 0x4fff) AND (t-old < 0x5004)) OR ((t-old > 0x500f) AND (t-old < 0x5014)) OR ((t-old > 0x50ff) AND (t-old < 0x5104)) OR ((t-old > 0x510f) AND (t-old < 0x5114)) OR ((t-old > 0x51ff) AND (t-old < 0x5203)) OR ((t-old > 0x520f) AND (t-old < 0x5213)) OR ((t-old > 0x52ff) AND (t-old < 0x5304)) OR ((t-old > 0x530f) AND (t-old < 0x5314))) AND (~%t-exc%~ STRING_CONTAINS_REGEXP ~%sr% ~ = 1) BEGIN
+      PATCH_IF (~c6bruen c6bruen2 cor jolus p#seas1 p#seasn tirthold ~ STRING_CONTAINS_REGEXP ~%sr% ~ = 0) BEGIN
+        PATCH_INCLUDE ~infinityanimations/lib/t-cre_fixer.tpp~ //These CREs need fixing because of hosed slots
+      END ELSE BEGIN
+        PATCH_INCLUDE ~infinityanimations/lib/fj_cre_reindex.tpp~
+      END
+      t-new = t-old + 0x1000
+      WRITE_SHORT 0x28 t-new
+      LOOKUP_IDS_SYMBOL_OF_INT t-oldt animate %t-old%
+      LOOKUP_IDS_SYMBOL_OF_INT t-newt animate %t-new%
+      INNER_ACTION BEGIN
+        SILENT
+        APPEND_OUTER ~infinityanimations/batch/t-low_fix.log~ ~%sr%	%t-old%	%t-oldt%	%t-new%	%t-newt%~
+        VERBOSE
+      END
+    END
+  END
+BUT_ONLY
+
+PRINT @21 //Patching IDS files ...
+OUTER_PATCH wlib BEGIN
+  WRITE_LONG 0x0 0x090a0d20
+  READ_ASCII 0x0 ws(4) //detects any whitespace
+END
+INCLUDE ~infinityanimations/ids/t-animate.tpa~
+INCLUDE ~infinityanimations/ids/t-anisnd.tpa~
+
+COPY_EXISTING ~%tst%halantr.bcs~ ~override~
+  DECOMPILE_BCS_TO_BAF
+    REPLACE_TEXTUALLY CASE_INSENSITIVE EXACT_MATCH ~Polymorph(MAGE_MALE_HUMAN_LOW)~ ~Polymorph(MAGE_MALE_HUMAN)~
+    REPLACE_TEXTUALLY CASE_INSENSITIVE EXACT_MATCH ~Polymorph(20992)~ ~Polymorph(25088)~
+  COMPILE_BAF_TO_BCS
+BUT_ONLY
+
+ACTION_IF FILE_EXISTS_IN_GAME ~ntkeelor.dlg~ BEGIN
+  COPY_EXISTING ~ntkeelor.dlg~ ~override~
+    PATCH_IF SOURCE_SIZE > 0x34 BEGIN
+      DECOMPILE_DLG_TO_D
+      REPLACE_TEXTUALLY CASE_INSENSITIVE EXACT_MATCH ~Polymorph(FIGHTER_MALE_DWARF_LOW)~ ~Polymorph(FIGHTER_MALE_DWARF)~
+      REPLACE_TEXTUALLY CASE_INSENSITIVE EXACT_MATCH ~Polymorph(20738)~ ~Polymorph(24834)~
+      COMPILE_D_TO_DLG
+    END
+  BUT_ONLY
+END
+
+ACTION_IF FILE_EXISTS_IN_GAME ~dalbion.dlg~ BEGIN
+  COPY_EXISTING ~dalbion.dlg~ ~override~
+    PATCH_IF SOURCE_SIZE > 0x34 BEGIN
+      DECOMPILE_DLG_TO_D
+      REPLACE_TEXTUALLY CASE_INSENSITIVE EXACT_MATCH ~Polymorph(IC_YUANTI3)~ ~Polymorph(YUANTI3)~
+      COMPILE_D_TO_DLG
+    END
+  BUT_ONLY
+END
+
+//MCAR gets rerouted to MCWL according to devSin
+ACTION_IF FILE_EXISTS_IN_GAME mcar.2da AND NOT FILE_EXISTS_IN_GAME mcwl.2da BEGIN
+  COPY_EXISTING ~mcar.2da~ ~override/mcwl.2da~
+END
+
+//Copy djinni to djinni_legs for consistency
+ACTION_IF FILE_EXISTS_IN_GAME mdji.2da AND NOT FILE_EXISTS_IN_GAME mdjl.2da BEGIN
+  COPY_EXISTING ~mdji.2da~ ~override/mdjl.2da~
+END
+
+//Copy mist_creature to blob_mist_creature
+ACTION_IF FILE_EXISTS_IN_GAME mmis.2da AND NOT FILE_EXISTS_IN_GAME mmst.2da BEGIN
+  COPY_EXISTING ~mmis.2da~ ~override/mmst.2da~
+END
+
+//Copy myconid to myconid2
+ACTION_IF FILE_EXISTS_IN_GAME mmyc.2da BEGIN
+  COPY_EXISTING ~mmyc.2da~ ~override/mmy2.2da~
+END
+
+//Copy orc_range2 to orc_range4
+ACTION_IF FILE_EXISTS_IN_GAME mor2.2da AND NOT FILE_EXISTS_IN_GAME mor4.2da BEGIN
+  COPY_EXISTING ~mor2.2da~ ~override/mor4.2da~
+END
+
+//Copy skeletona to skeleton0
+ACTION_IF FILE_EXISTS_IN_GAME mska.2da AND NOT FILE_EXISTS_IN_GAME mskt.2da BEGIN
+  COPY_EXISTING ~mska.2da~ ~override/mskt.2da~
+END
+
+//Delete extra spaces and line breaks
+STRING_SET 1154 @500 //Yuan-Ti Mage
+STRING_SET 1294 @500 //Yuan-Ti Mage
+STRING_SET 1323 @501 //Yuan-Ti
+STRING_SET 2243 @502 //Gnoll Captain
+STRING_SET 2258 @503 //Hobgoblin Captain
+STRING_SET 2268 @504 //Hobgoblin Wizard
+STRING_SET 19694 @502 //Gnoll Captain
+
+ACTION_IF ((FILE_EXISTS_IN_GAME ~bpdrifm1.cre~) OR (FILE_EXISTS_IN_GAME ~cbbgbera.cre~) OR (FILE_EXISTS_IN_GAME ~f_bel.cre~) OR (FILE_EXISTS_IN_GAME ~doomguar.cre~) OR (FILE_EXISTS_IN_GAME ~brefr1.cre~) OR (FILE_EXISTS_IN_GAME ~cbssyeti.cre~) OR (FILE_EXISTS_IN_GAME ~ddfrost1.cre~) OR (FILE_EXISTS_IN_GAME ~purang.cre~) OR (FILE_EXISTS_IN_GAME ~k#polys.spl~) OR (FILE_EXISTS_IN_GAME ~pslady.cre~) OR (FILE_EXISTS_IN_GAME ~s#crow.cre~) OR (FILE_EXISTS_IN_GAME ~lcwtazok.itm~) OR (FILE_EXISTS_IN_GAME ~zur104.itm~)) AND FILE_EXISTS ~infinityanimations/restore/mgo3a1.bam~ BEGIN
+
+  PRINT @22 //Restoring previously overwritten BG2 animations ...
+
+  ACTION_IF ((FILE_EXISTS_IN_GAME ~bpdrifm1.cre~) OR (FILE_EXISTS_IN_GAME ~cbbgbera.cre~) OR (FILE_EXISTS_IN_GAME ~f_bel.cre~) OR (FILE_EXISTS_IN_GAME ~brefr1.cre~) OR (FILE_EXISTS_IN_GAME ~cbssyeti.cre~) OR (FILE_EXISTS_IN_GAME ~purang.cre~)) BEGIN //BP, CtB, Drizzt Saga, RoT, SOS, TS
+
+    ACTION_FOR_EACH bm IN ~mgh2a3~ ~mgh2a4~ ~mgh2ca~ ~mgh2sp~ BEGIN //ghoul_iwd
+      ACTION_IF FILE_EXISTS_IN_GAME ~%bm%.bam~ BEGIN
+       ACTION_IF FILE_EXISTS ~override/%bm%.bam~ BEGIN
+          DELETE ~override/%bm%.bam~
+        END
+        DISABLE_FROM_KEY ~%bm%.bam~
+      END
+    END
+
+    ACTION_FOR_EACH bm IN ~mgh2a3e~ ~mgh2a4e~ ~mgh2cae~ ~mgh2spe~ BEGIN
+      ACTION_IF FILE_EXISTS_IN_GAME ~%bm%.bam~ BEGIN
+       ACTION_IF FILE_EXISTS ~override/%bm%.bam~ BEGIN
+          DELETE ~override/%bm%.bam~
+        END
+        DISABLE_FROM_KEY ~%bm%.bam~
+      END
+    END
+
+    ACTION_IF FILE_EXISTS_IN_GAME ~mgh3a4.bam~ BEGIN //ghast_iwd
+      ACTION_IF FILE_EXISTS ~override/mgh3a4.bam~ BEGIN
+        DELETE ~override/mgh3a4.bam~
+      END
+      DISABLE_FROM_KEY ~mgh3a4.bam~
+    END
+
+    ACTION_IF FILE_EXISTS_IN_GAME ~mgh3a4e.bam~ BEGIN
+      ACTION_IF FILE_EXISTS ~override/mgh3a4e.bam~ BEGIN
+        DELETE ~override/mgh3a4e.bam~
+      END
+      DISABLE_FROM_KEY ~mgh3a4e.bam~
+    END
+
+    ACTION_FOR_EACH bm IN ~mgo4a2~ ~mgo4ca~ ~mgo4sp~ BEGIN //goblinelite_bow
+      ACTION_IF FILE_EXISTS_IN_GAME ~%bm%.bam~ BEGIN
+        ACTION_IF FILE_EXISTS ~override/%bm%.bam~ BEGIN
+          DELETE ~override/%bm%.bam~
+        END
+        DISABLE_FROM_KEY ~%bm%.bam~
+      END
+    END
+
+    ACTION_FOR_EACH bm IN ~mgo4a2e~ ~mgo4cae~ ~mgo4spe~ BEGIN
+      ACTION_IF FILE_EXISTS_IN_GAME ~%bm%.bam~ BEGIN
+        ACTION_IF FILE_EXISTS ~override/%bm%.bam~ BEGIN
+          DELETE ~override/%bm%.bam~
+        END
+        DISABLE_FROM_KEY ~%bm%.bam~
+      END
+    END
+
+    ACTION_FOR_EACH bm IN ~mhisa4~ ~mhisca~ ~mhissp~ BEGIN //histachii
+      ACTION_IF FILE_EXISTS_IN_GAME ~%bm%.bam~ BEGIN
+        ACTION_IF FILE_EXISTS ~override/%bm%.bam~ BEGIN
+          DELETE ~override/%bm%.bam~
+        END
+        DISABLE_FROM_KEY ~%bm%.bam~
+      END
+    END
+
+    ACTION_FOR_EACH bm IN ~mhisa4e~ ~mhiscae~ ~mhisspe~ BEGIN
+      ACTION_IF FILE_EXISTS_IN_GAME ~%bm%.bam~ BEGIN
+        ACTION_IF FILE_EXISTS ~override/%bm%.bam~ BEGIN
+          DELETE ~override/%bm%.bam~
+        END
+        DISABLE_FROM_KEY ~%bm%.bam~
+      END
+    END
+
+    ACTION_FOR_EACH bm IN ~mlica3~ ~mlica4~ BEGIN //lich_iwd
+      ACTION_IF FILE_EXISTS_IN_GAME ~%bm%.bam~ BEGIN
+        ACTION_IF FILE_EXISTS ~override/%bm%.bam~ BEGIN
+          DELETE ~override/%bm%.bam~
+        END
+        DISABLE_FROM_KEY ~%bm%.bam~
+      END
+    END
+
+    ACTION_FOR_EACH bm IN ~mlica3e~ ~mlica4e~ BEGIN
+      ACTION_IF FILE_EXISTS_IN_GAME ~%bm%.bam~ BEGIN
+        ACTION_IF FILE_EXISTS ~override/%bm%.bam~ BEGIN
+          DELETE ~override/%bm%.bam~
+        END
+        DISABLE_FROM_KEY ~%bm%.bam~
+      END
+    END
+
+    ACTION_FOR_EACH bm IN ~mtica4~ ~mticca~ ~mticsp~ BEGIN //troll_ice
+      ACTION_IF FILE_EXISTS_IN_GAME ~%bm%.bam~ BEGIN
+        ACTION_IF FILE_EXISTS ~override/%bm%.bam~ BEGIN
+          DELETE ~override/%bm%.bam~
+        END
+        DISABLE_FROM_KEY ~%bm%.bam~
+      END
+    END
+
+    ACTION_FOR_EACH bm IN ~mtica4e~ ~mticcae~ ~mticspe~ BEGIN
+      ACTION_IF FILE_EXISTS_IN_GAME ~%bm%.bam~ BEGIN
+        ACTION_IF FILE_EXISTS ~override/%bm%.bam~ BEGIN
+          DELETE ~override/%bm%.bam~
+        END
+        DISABLE_FROM_KEY ~%bm%.bam~
+      END
+    END
+
+    ACTION_FOR_EACH bm IN ~킺ba1~ ~킺ba2~ ~킺bca~ ~킺bde~ ~킺bgh~ ~킺bgu~ ~킺bsc~ ~킺bsd~ ~킺bsl~ ~킺bsp~ ~킺btw~ ~킺bwk~ BEGIN //umber_hulks_iwd
+      ACTION_IF FILE_EXISTS_IN_GAME ~%bm%.bam~ BEGIN
+       ACTION_IF FILE_EXISTS ~override/%bm%.bam~ BEGIN
+          DELETE ~override/%bm%.bam~
+        END
+        DISABLE_FROM_KEY ~%bm%.bam~
+      END
+    END
+
+    ACTION_FOR_EACH bm IN ~킺ba1e~ ~킺ba2e~ ~킺bcae~ ~킺bdee~ ~킺bghe~ ~킺bgue~ ~킺bsce~ ~킺bsde~ ~킺bsle~ ~킺bspe~ ~킺btwe~ ~킺bwke~ BEGIN
+      ACTION_IF FILE_EXISTS_IN_GAME ~%bm%.bam~ BEGIN
+       ACTION_IF FILE_EXISTS ~override/%bm%.bam~ BEGIN
+          DELETE ~override/%bm%.bam~
+        END
+        DISABLE_FROM_KEY ~%bm%.bam~
+      END
+    END
+
+    ACTION_FOR_EACH bm IN ~mumba3~ BEGIN //umber_hulks_iwd
+      ACTION_IF FILE_EXISTS_IN_GAME ~%bm%.bam~ BEGIN
+       ACTION_IF FILE_EXISTS ~override/%bm%.bam~ BEGIN
+          DELETE ~override/%bm%.bam~
+        END
+        DISABLE_FROM_KEY ~%bm%.bam~
+      END
+    END
+
+    ACTION_FOR_EACH bm IN ~mumba3e~ BEGIN
+      ACTION_IF FILE_EXISTS_IN_GAME ~%bm%.bam~ BEGIN
+       ACTION_IF FILE_EXISTS ~override/%bm%.bam~ BEGIN
+          DELETE ~override/%bm%.bam~
+        END
+        DISABLE_FROM_KEY ~%bm%.bam~
+      END
+    END
+
+    ACTION_IF FILE_EXISTS_IN_GAME ~mwiga4.bam~ BEGIN //wight
+      ACTION_IF FILE_EXISTS ~override/mwiga4.bam~ BEGIN
+        DELETE ~override/mwiga4.bam~
+      END
+      DISABLE_FROM_KEY ~mwiga4.bam~
+    END
+
+    ACTION_IF FILE_EXISTS_IN_GAME ~mwiga4e.bam~ BEGIN
+      ACTION_IF FILE_EXISTS ~override/mwiga4e.bam~ BEGIN
+        DELETE ~override/mwiga4e.bam~
+      END
+      DISABLE_FROM_KEY ~mwiga4e.bam~
+    END
+
+    ACTION_FOR_EACH bm IN ~mzo2a3~ ~mzo2a4~ ~mzo2ca~ ~mzo2sp~ BEGIN //zombie_yellow
+      ACTION_IF FILE_EXISTS_IN_GAME ~%bm%.bam~ BEGIN
+        ACTION_IF FILE_EXISTS ~override/%bm%.bam~ BEGIN
+          DELETE ~override/%bm%.bam~
+        END
+        DISABLE_FROM_KEY ~%bm%.bam~
+      END
+    END
+
+    ACTION_FOR_EACH bm IN ~mzo2a3e~ ~mzo2a4e~ ~mzo2cae~ ~mzo2spe~ BEGIN
+      ACTION_IF FILE_EXISTS_IN_GAME ~%bm%.bam~ BEGIN
+        ACTION_IF FILE_EXISTS ~override/%bm%.bam~ BEGIN
+          DELETE ~override/%bm%.bam~
+        END
+        DISABLE_FROM_KEY ~%bm%.bam~
+      END
+    END
+
+    ACTION_FOR_EACH bm IN ~mgh2aa1~ ~mgh2aa1e~ ~mgh2aa2~ ~mgh2aa2e~ ~mgh2agh~ ~mgh2aghe~ ~mgh2agu~ ~mgh2ague~ ~mgh2asc~ ~mgh2asce~ ~mgh2asd~ ~mgh2asde~ ~mgh2asl~ ~mgh2asle~ ~mgh2awk~ ~mgh2awke~ ~mgh2ma1~ ~mgh2ma1e~ ~mgh2ma2~ ~mgh2ma2e~ ~mgh2mgh~ ~mgh2mghe~ ~mgh2mgu~ ~mgh2mgue~ ~mgh2msc~ ~mgh2msce~ ~mgh2msd~ ~mgh2msde~ ~mgh2msl~ ~mgh2msle~ ~mgh2mwk~ ~mgh2mwke~ ~mgh2sa1~ ~mgh2sa1e~ ~mgh2sa2~ ~mgh2sa2e~ ~mgh2sgh~ ~mgh2sghe~ ~mgh2sgu~ ~mgh2sgue~ ~mgh2ssc~ ~mgh2ssce~ ~mgh2ssd~ ~mgh2ssde~ ~mgh2ssl~ ~mgh2ssle~ ~mgh2swk~ ~mgh2swke~ ~mgh3aa1~ ~mgh3aa1e~ ~mgh3aa2~ ~mgh3aa2e~ ~mgh3agh~ ~mgh3aghe~ ~mgh3agu~ ~mgh3ague~ ~mgh3asc~ ~mgh3asce~ ~mgh3asd~ ~mgh3asde~ ~mgh3asl~ ~mgh3asle~ ~mgh3awk~ ~mgh3awke~ ~mgh3sa1~ ~mgh3sa1e~ ~mgh3sa2~ ~mgh3sa2e~ ~mgh3sgh~ ~mgh3sghe~ ~mgh3sgu~ ~mgh3sgue~ ~mgh3ssc~ ~mgh3ssce~ ~mgh3ssd~ ~mgh3ssde~ ~mgh3ssl~ ~mgh3ssle~ ~mgh3swk~ ~mgh3swke~ ~mgh3wa1~ ~mgh3wa1e~ ~mgh3wa2~ ~mgh3wa2e~ ~mgh3wgh~ ~mgh3wghe~ ~mgh3wgu~ ~mgh3wgue~ ~mgh3wsc~ ~mgh3wsce~ ~mgh3wsd~ ~mgh3wsde~ ~mgh3wsl~ ~mgh3wsle~ ~mgh3wwk~ ~mgh3wwke~ ~mhisma1~ ~mhisma1e~ ~mhisma2~ ~mhisma2e~ ~mhisma4~ ~mhisma4e~ ~mhismca~ ~mhismcae~ ~mhismgh~ ~mhismghe~ ~mhismgu~ ~mhismgue~ ~mhismsc~ ~mhismsce~ ~mhismsd~ ~mhismsde~ ~mhismsl~ ~mhismsle~ ~mhismsp~ ~mhismspe~ ~mhismwk~ ~mhismwke~ ~mhissa1~ ~mhissa1e~ ~mhissa2~ ~mhissa2e~ ~mhissa4~ ~mhissa4e~ ~mhissca~ ~mhisscae~ ~mhissgh~ ~mhissghe~ ~mhissgu~ ~mhissgue~ ~mhisssc~ ~mhisssce~ ~mhisssd~ ~mhisssde~ ~mhisssl~ ~mhisssle~ ~mhisssp~ ~mhissspe~ ~mhisswk~ ~mhisswke~ ~mlicaa1~ ~mlicaa1e~ ~mlicaa2~ ~mlicaa2e~ ~mlicaa4~ ~mlicaa4e~ ~mlicaca~ ~mlicacae~ ~mlicagh~ ~mlicaghe~ ~mlicagu~ ~mlicague~ ~mlicasc~ ~mlicasce~ ~mlicasd~ ~mlicasde~ ~mlicasl~ ~mlicasle~ ~mlicasp~ ~mlicaspe~ ~mlicawk~ ~mlicawke~ ~mlicma1~ ~mlicma1e~ ~mlicma2~ ~mlicma2e~ ~mlicma4~ ~mlicma4e~ ~mlicmca~ ~mlicmcae~ ~mlicmgh~ ~mlicmghe~ ~mlicmgu~ ~mlicmgue~ ~mlicmsc~ ~mlicmsce~ ~mlicmsd~ ~mlicmsde~ ~mlicmsl~ ~mlicmsle~ ~mlicmsp~ ~mlicmspe~ ~mlicmwk~ ~mlicmwke~ ~mlicsa1~ ~mlicsa1e~ ~mlicsa2~ ~mlicsa2e~ ~mlicsa4~ ~mlicsa4e~ ~mlicsca~ ~mlicscae~ ~mlicsgh~ ~mlicsghe~ ~mlicsgu~ ~mlicsgue~ ~mlicssc~ ~mlicssce~ ~mlicssd~ ~mlicssde~ ~mlicssl~ ~mlicssle~ ~mlicssp~ ~mlicsspe~ ~mlicswk~ ~mlicswke~ ~mum2a4~ ~mum2a4e~ ~mum2aa1~ ~mum2aa1e~ ~mum2aa2~ ~mum2aa2e~ ~mum2aa4~ ~mum2aa4e~ ~mum2aca~ ~mum2acae~ ~mum2agh~ ~mum2aghe~ ~mum2agu~ ~mum2ague~ ~mum2asc~ ~mum2asce~ ~mum2asd~ ~mum2asde~ ~mum2asl~ ~mum2asle~ ~mum2asp~ ~mum2aspe~ ~mum2awk~ ~mum2awke~ ~mum2ma1~ ~mum2ma1e~ ~mum2ma2~ ~mum2ma2e~ ~mum2ma4~ ~mum2ma4e~ ~mum2mca~ ~mum2mcae~ ~mum2mgh~ ~mum2mghe~ ~mum2mgu~ ~mum2mgue~ ~mum2msc~ ~mum2msce~ ~mum2msd~ ~mum2msde~ ~mum2msl~ ~mum2msle~ ~mum2msp~ ~mum2mspe~ ~mum2mwk~ ~mum2mwke~ ~mum2sa1~ ~mum2sa1e~ ~mum2sa2~ ~mum2sa2e~ ~mum2sa4~ ~mum2sa4e~ ~mum2sca~ ~mum2scae~ ~mum2sgh~ ~mum2sghe~ ~mum2sgu~ ~mum2sgue~ ~mum2ssc~ ~mum2ssce~ ~mum2ssd~ ~mum2ssde~ ~mum2ssl~ ~mum2ssle~ ~mum2ssp~ ~mum2sspe~ ~mum2swk~ ~mum2swke~ ~mwigaa1~ ~mwigaa1e~ ~mwigaa2~ ~mwigaa2e~ ~mwigaa4~ ~mwigaa4e~ ~mwigaca~ ~mwigacae~ ~mwigagh~ ~mwigaghe~ ~mwigagu~ ~mwigague~ ~mwigasc~ ~mwigasce~ ~mwigasd~ ~mwigasde~ ~mwigasl~ ~mwigasle~ ~mwigasp~ ~mwigaspe~ ~mwigawk~ ~mwigawke~ ~mwigma1~ ~mwigma1e~ ~mwigma2~ ~mwigma2e~ ~mwigma4~ ~mwigma4e~ ~mwigmca~ ~mwigmcae~ ~mwigmgh~ ~mwigmghe~ ~mwigmgu~ ~mwigmgue~ ~mwigmsc~ ~mwigmsce~ ~mwigmsd~ ~mwigmsde~ ~mwigmsl~ ~mwigmsle~ ~mwigmsp~ ~mwigmspe~ ~mwigmwk~ ~mwigmwke~ ~mwigsa1~ ~mwigsa1e~ ~mwigsa2~ ~mwigsa2e~ ~mwigsa4~ ~mwigsa4e~ ~mwigsca~ ~mwigscae~ ~mwigsgh~ ~mwigsghe~ ~mwigsgu~ ~mwigsgue~ ~mwigssc~ ~mwigssce~ ~mwigssd~ ~mwigssde~ ~mwigssl~ ~mwigssle~ ~mwigssp~ ~mwigsspe~ ~mwigswk~ ~mwigswke~ BEGIN //stacked slots
+      ACTION_IF FILE_EXISTS_IN_GAME ~%bm%.bam~ BEGIN
+        ACTION_IF FILE_EXISTS ~override/%bm%.bam~ BEGIN
+          DELETE ~override/%bm%.bam~
+        END
+        DISABLE_FROM_KEY ~%bm%.bam~
+      END
+    END
+  END
+  COPY_LARGE ~infinityanimations/restore~ ~override~
+END
+
+SILENT
+ACTION_IF FILE_EXISTS_IN_GAME ~const01.cre~ BEGIN //Mage Construct
+  COPY_EXISTING ~const01.cre~ ~override~
+    PATCH_IF SOURCE_SIZE > 0x2d3 BEGIN
+      WRITE_SHORT 0x28 0xe0f0 //Animation ID (ice_golem)
+    END
+  BUT_ONLY
+END
+
+ACTION_FOR_EACH nb IN ~firorc01~ ~orc05~ ~rorcl01~ BEGIN
+  ACTION_IF FILE_EXISTS_IN_GAME ~%nb%.cre~ BEGIN //Orogs 1
+    COPY_EXISTING ~%nb%.cre~ ~override~
+      PATCH_INCLUDE ~infinityanimations/lib/fj_cre_validity.tpp~
+      PATCH_IF vl BEGIN
+        PATCH_INCLUDE ~infinityanimations/lib/fj_cre_reindex.tpp~
+        WRITE_SHORT 0x28 0xe700 //Animation ID (orog1)
+      END
+    BUT_ONLY
+  END
+END
+
+ACTION_FOR_EACH nb IN ~ar18fig~ ~hlolaf~ ~orc06~ BEGIN
+  ACTION_IF FILE_EXISTS_IN_GAME ~%nb%.cre~ BEGIN //Orogs 2
+    COPY_EXISTING ~%nb%.cre~ ~override~
+      PATCH_INCLUDE ~infinityanimations/lib/fj_cre_validity.tpp~
+      PATCH_IF vl BEGIN
+        PATCH_INCLUDE ~infinityanimations/lib/fj_cre_reindex.tpp~
+        WRITE_SHORT 0x28 0xe710 //Animation ID (orog2)
+      END
+    BUT_ONLY
+  END
+END
+
+ACTION_FOR_EACH nb IN ~firorc03~ ~sarbul04~ ~sargrd04~ ~sargrd10~ BEGIN
+  ACTION_IF FILE_EXISTS_IN_GAME ~%nb%.cre~ BEGIN //Orcs Melee 3
+    COPY_EXISTING ~%nb%.cre~ ~override~
+      PATCH_INCLUDE ~infinityanimations/lib/fj_cre_validity.tpp~
+      PATCH_IF vl BEGIN
+        PATCH_INCLUDE ~infinityanimations/lib/fj_cre_reindex.tpp~
+        WRITE_SHORT 0x28 0xe820 //Animation ID (orc_melee3)
+      END
+    BUT_ONLY
+  END
+END
+
+ACTION_FOR_EACH nb IN ~orc03~ ~orc04~ BEGIN
+  ACTION_IF FILE_EXISTS_IN_GAME ~%nb%.cre~ BEGIN //Orc Shamans
+    COPY_EXISTING ~%nb%.cre~ ~override~
+      PATCH_INCLUDE ~infinityanimations/lib/fj_cre_validity.tpp~
+      PATCH_IF vl BEGIN
+        PATCH_INCLUDE ~infinityanimations/lib/fj_cre_reindex.tpp~
+        WRITE_SHORT 0x28 0xe840 //Animation ID (orc_shaman)
+      END
+    BUT_ONLY
+  END
+END
+VERBOSE
+
+PRINT @23 //Copying new animations to the game (this may take a while) ...
+COPY_LARGE ~infinityanimations/content~ ~override~
+
+ACTION_IF (FILE_EXISTS_IN_GAME ~bpdrifm1.cre~) OR (FILE_EXISTS_IN_GAME ~bhlizkng.cre~) OR (FILE_EXISTS_IN_GAME ~cbbgbera.cre~) OR (FILE_EXISTS_IN_GAME ~f_bel.cre~) OR (FILE_EXISTS_IN_GAME ~doomguar.cre~) OR (FILE_EXISTS_IN_GAME ~brefr1.cre~) OR (FILE_EXISTS_IN_GAME ~cbssyeti.cre~) OR (FILE_EXISTS_IN_GAME ~ddfrost1.cre~) OR (FILE_EXISTS_IN_GAME ~purang.cre~) OR (FILE_EXISTS_IN_GAME ~k#polys.spl~) OR (FILE_EXISTS_IN_GAME ~pslady.cre~) OR (FILE_EXISTS_IN_GAME ~s#crow.cre~) BEGIN
+  PRINT @24 //Correcting creature animations ...
+END
+
+OUTER_PATCH blor BEGIN
+  GET_STRREF 8449 bl //Some mod misspells "Balor"
+END
+ACTION_IF (~%bl%~ STRING_EQUAL ~Baalor~ = 1) BEGIN
+  STRING_SET 8449 @505 //Balor
+  STRING_SET 8450 @505 //Balor
+END
+
+SILENT
+ACTION_FOR_EACH nb IN ~acq50002~ ~actanar~ ~asham~ ~balor01~ ~balorsu~ ~bw05jere~ ~caddem1~ ~caddem12~ ~caddem16~ ~caddem17~ ~caddem18~ ~caddem21~ ~caddem24~ ~caddem25~ ~caddem4~ ~caddem8~ ~caddem9~ ~cbmalrdm~ ~cbtanasu~ ~cratzyl~ ~decre#09~ ~delord~ ~dembal01~ ~dembal02~ ~dembalr1~ ~dembalsu~ ~demosum2~ ~dpdem01~ ~dsroach~ ~dubnd10~ ~dw#grbal~ ~eastdem2~ ~eastdem4~ ~eastdem7~ ~eastdem9~ ~enddem03~ ~endragor~ ~errtu~ ~errtu01~ ~errtu02~ ~errtu03~ ~f_demdrg~ ~f_errtu~ ~f_tanari~ ~f_tansum~ ~finbalor~ ~garg~ ~glourkis~ ~godmari4~ ~gordem~ ~gordemc1~ ~gortan1~ ~heldem5~ ~hellfear~ ~hellgree~ ~hellprid~ ~hellself~ ~holytana~ ~jc_dem02~ ~jondem02~ ~jondem04~ ~m#ydemon~ ~m05demon~ ~melsum04~ ~ntdemon~ ~orcus~ ~ppdemon~ ~psdem01~ ~psdem02~ ~psdem03~ ~pstana01~ ~pstanal~ ~r#demon~ ~riattan1~ ~riattan2~ ~riattan3~ ~riftcr04~ ~rr#sbalr~ ~sudemde1~ ~sudemde2~ ~sudemon~ ~sudemon2~ ~sudemw1~ ~sumtan01~ ~sumtan02~ ~tanarix1~ ~tanarixa~ ~tanarixb~ ~tannar~ ~tannar2~ ~tannar3~ ~tartar01~ ~tartarus~ ~telbal1~ ~telbal2~ ~tg#did3~ ~tg#did4~ ~udbalor~ ~va#balor~ ~w_rune~ ~yoshimoa~ ~z#gbalor~ ~z_2balor~ ~z_bered~ ~z_torta~ ~zy18bala~ ~zy18balb~ ~zy18balc~ ~zy18bald~ ~zy18bale~ ~zy18balf~ ~zy18balg~ ~zy18balh~ ~zy18bali~ ~zy18balj~ ~zy18balk~ ~zy18ball~ ~zy18balm~ BEGIN
+  ACTION_IF FILE_EXISTS_IN_GAME ~%nb%.cre~ BEGIN //Balors
+    COPY_EXISTING ~%nb%.cre~ ~override~
+      PATCH_INCLUDE ~infinityanimations/lib/fj_cre_validity.tpp~
+      PATCH_IF vl BEGIN
+        PATCH_INCLUDE ~infinityanimations/lib/fj_cre_reindex.tpp~
+        READ_STRREF 0x8 nm //Name
+        PATCH_IF (~%nm%~ STRING_EQUAL ~Baalor~ = 1) OR (~%nm%~ STRING_EQUAL ~Baloar~ = 1) BEGIN
+          WRITE_LONG 0x8 8449 //Fix typos
+          WRITE_LONG 0xc 8450
+        END
+        WRITE_SHORT 0x28 0x1100 //Animation (tanar'ri)
+        PATCH_IF BYTE_AT 0x234 < 13 BEGIN
+          WRITE_BYTE 0x234 13 //Level 1
+        END
+        WRITE_BYTE 0x237 1 //Sex (male)
+        WRITE_BYTE 0x271 255 //General (monster)
+        WRITE_BYTE 0x272 121 //Race (fiend)
+        WRITE_BYTE 0x273 160 //Class (tanar'ri)
+        READ_BYTE 0x275 gd //Gender
+        PATCH_IF (gd != 6) AND (gd != 9) BEGIN //If not summoned
+          WRITE_BYTE 0x275 1 //male
+        END
+        WRITE_BYTE 0x27b 51 //Alignment (chaotic evil by definition)
+        LAUNCH_PATCH_FUNCTION DELETE_CRE_EFFECT
+          INT_VAR opcode_to_delete = 52 //Very bright by RGB
+        END
+        SAY INITIAL_MEETING ~~ [TANAR03]
+        SAY MORALE ~~ [TANAR02]
+        SAY UNHAPPY_BREAKING_POINT ~~ [TANAR02]
+        SAY BATTLE_CRY1 ~~ [TANAR01]
+        SAY BATTLE_CRY2 ~~ [TANAR02]
+        SAY BATTLE_CRY3 ~~ [TANAR03]
+        WRITE_LONG BATTLE_CRY4 (0 - 1)
+        WRITE_LONG BATTLE_CRY5 (0 - 1)
+        SAY ATTACK1 ~~ [TANAR04]
+        WRITE_LONG ATTACK2 (0 - 1)
+        SAY DAMAGE ~~ [TANAR06]
+        SAY DYING ~~ [TANAR07]
+        SAY SELECT_COMMON1 ~~ [TANAR01]
+        SAY SELECT_COMMON2 ~~ [TANAR04]
+        SAY SELECT_COMMON3 ~~ [TANAR05]
+      END
+    BUT_ONLY
+  END
+END
+
+ACTION_FOR_EACH nb IN ~caddem11~ ~caddem18~ ~caddem25~ ~caddem3~ ~dempit~ ~dempit01~ ~dempitr1~ ~dempitr2~ ~dempitsu~ ~demgelsu~ ~dubnd11~ ~dw#bazpf~ ~dw#pitsu~ ~gelugeon~ ~gelugon1~ ~heldem3~ ~heldem4~ ~heldem5~ ~psbaatl~ ~rempitsu~ ~telpit1~ ~telpit2~ ~tg#dem1~ ~z#gpit01~ ~z#gpitfd~ ~z_whel1~ ~z_whel2~ ~z_whel3~ ~z_whel4~ BEGIN
+  ACTION_IF FILE_EXISTS_IN_GAME ~%nb%.cre~ BEGIN //Devils (Pit Fiends, Gelugons)
+    COPY_EXISTING ~%nb%.cre~ ~override~
+      PATCH_INCLUDE ~infinityanimations/lib/fj_cre_validity.tpp~
+      PATCH_IF vl BEGIN
+        PATCH_INCLUDE ~infinityanimations/lib/fj_cre_reindex.tpp~
+        WRITE_SHORT 0x28 0x1100 //Animation (tanar'ri)
+        WRITE_BYTE 0x237 1 //Sex (male)
+        WRITE_BYTE 0x271 255 //General (monster)
+        READ_BYTE 0x275 gd //Gender
+        PATCH_IF (gd != 6) AND (gd != 9) BEGIN //If not summoned
+          WRITE_BYTE 0x275 1 //male
+        END
+        WRITE_BYTE 0x272 121 //Race (fiend)
+        WRITE_BYTE 0x273 179 //Class (devil)
+        WRITE_BYTE 0x27b 19 //Alignment (lawful evil by definition)
+      END
+    BUT_ONLY
+  END
+END
+
+ACTION_FOR_EACH nb IN ~alessari~ ~damind1~ ~damind2~ ~dpmon01~ ~dw#ssill~ ~eleill01~ ~elmind01~ ~godmiva1~ ~gorminc1~ ~gorminc2~ ~gorminc3~ ~gorminc4~ ~gormind~ ~guareye3~ ~holymind~ ~kz#fvamp~ ~marelid~ ~melsum06~ ~mindal01~ ~mindfl01~ ~mindul01~ ~mindva01~ ~mindvam~ ~nuessa~ ~ppmind01~ ~psflay1~ ~psflay2~ ~senill01~ ~senill02~ ~shmind~ ~tcmdalh1~ ~tcmdalh2~ ~tcmdalh3~ ~udill01~ ~udmind01~ ~udmind02~ ~udmind03~ ~udmind04~ ~udmind10~ ~udvamp~ ~xsmindf~ ~xsmindv~ BEGIN
+  ACTION_IF FILE_EXISTS_IN_GAME ~%nb%.cre~ BEGIN //Mind Flayers
+    COPY_EXISTING ~%nb%.cre~ ~override~
+      PATCH_INCLUDE ~infinityanimations/lib/fj_cre_validity.tpp~
+      PATCH_IF vl BEGIN
+        PATCH_INCLUDE ~infinityanimations/lib/fj_cre_reindex.tpp~
+        PATCH_IF BYTE_AT 0x237 = 0 BEGIN
+          WRITE_BYTE 0x237 1 //Sex (male)
+        END
+        WRITE_BYTE 0x272 124 //Race (mind_flayer)
+        PATCH_IF (BYTE_AT 0x273 = 0) OR (BYTE_AT 0x273 > 20) BEGIN
+          WRITE_BYTE 0x273 162 //Class (mind_flayer)
+        END
+        PATCH_IF BYTE_AT 0x275 > 7 BEGIN
+          WRITE_BYTE 0x275 1 //male
+        END
+        SAY BATTLE_CRY1 ~~ [MINDF01]
+        SAY BATTLE_CRY2 ~~ [MINDF02]
+        SAY ATTACK1 ~~ [MINDF03]
+        SAY DAMAGE ~~ [MINDF06]
+        SAY DYING ~~ [MINDF07]
+        SAY SELECT_COMMON1 ~~ [MINDF01]
+      END
+    BUT_ONLY
+  END
+END
+
+ACTION_FOR_EACH nb IN ~amminot~ ~d0qpsy09~ ~duogre02~ ~garock~ ~grommin~ ~hlmafer~ ~icmin01~ ~minat~ ~rock~ ~slandor~ ~tcmin01~ ~tcmin02~ ~tcslseer~ ~tsnbad1~ ~uhogre03~ ~va#minot~ BEGIN
+  ACTION_IF FILE_EXISTS_IN_GAME ~%nb%.cre~ BEGIN //Minotaurs
+    COPY_EXISTING ~%nb%.cre~ ~override~
+      PATCH_INCLUDE ~infinityanimations/lib/fj_cre_validity.tpp~
+      PATCH_IF vl BEGIN
+        PATCH_INCLUDE ~infinityanimations/lib/fj_cre_reindex.tpp~
+        WRITE_BYTE 0x237 1 //Sex (male)
+        WRITE_BYTE 0x271 5 //General (gianthumanoid)
+        WRITE_BYTE 0x272 113 //Race (ogre)
+        PATCH_IF BYTE_AT 0x273 > 20 BEGIN
+          WRITE_BYTE 0x273 125 //Class (ogre)
+        END
+        READ_BYTE 0x275 gd //Gender
+        PATCH_IF (gd != 6) AND (gd != 9) BEGIN //If not summoned
+          WRITE_BYTE 0x275 1 //male
+        END
+        SAY BATTLE_CRY1 ~~ [T-MIN01]
+        SAY BATTLE_CRY2 ~~ [T-MIN02]
+        SAY BATTLE_CRY3 ~~ [T-MIN09]
+        SAY ATTACK1 ~~ [T-MIN03]
+        SAY DAMAGE ~~ [T-MIN07]
+        SAY DYING ~~ [T-MIN10]
+        SAY SELECT_COMMON1 ~~ [T-MIN04]
+        SAY SELECT_COMMON2 ~~ [T-MIN08]
+        SAY SELECT_COMMON3 ~~ [T-MIN11]
+      END
+    BUT_ONLY
+  END
+END
+
+ACTION_FOR_EACH nb IN ~bpdric01~ ~cbdrifal~ ~cbdrifml~ ~cbdrifsl~ BEGIN
+  ACTION_IF FILE_EXISTS_IN_GAME ~%nb%.cre~ BEGIN //Drider Females
+    COPY_EXISTING ~%nb%.cre~ ~override~
+      PATCH_INCLUDE ~infinityanimations/lib/fj_cre_validity.tpp~
+      PATCH_IF vl BEGIN
+        PATCH_INCLUDE ~infinityanimations/lib/fj_cre_reindex.tpp~
+        WRITE_SHORT 0x28 0x5001 //Animation (drider_female)
+        WRITE_BYTE 0x237 2 //Sex (female)
+        WRITE_BYTE 0x271 255 //General (monster)
+        READ_BYTE 0x275 gd //Gender
+        PATCH_IF (gd != 6) AND (gd != 9) BEGIN //If not summoned
+          WRITE_BYTE 0x275 2 //female
+        END
+        SAY INITIAL_MEETING ~~ [T-DRF06B]
+        SAY MORALE ~~ [T-DRF08A]
+        SAY UNHAPPY_BREAKING_POINT ~~ [T-DRF08A]
+        SAY BATTLE_CRY1 ~~ [T-DRF01A]
+        SAY BATTLE_CRY2 ~~ [T-DRF01B]
+        SAY BATTLE_CRY3 ~~ [T-DRF02A]
+        SAY BATTLE_CRY4 ~~ [T-DRF05A]
+        SAY ATTACK1 ~~ [T-DRF03A]
+        SAY DAMAGE ~~ [T-DRF07A]
+        SAY DYING ~~ [T-DRF10A]
+        SAY SELECT_COMMON1 ~~ [T-DRF03B]
+        SAY SELECT_COMMON2 ~~ [T-DRF04A]
+        SAY SELECT_COMMON3 ~~ [T-DRF04B]
+        SAY SELECT_COMMON4 ~~ [T-DRF05B]
+        SAY CRITICAL_MISS ~~ [T-DRF06A]
+        SAY SPELL_DISRUPTED ~~ [T-DRF07B]
+      END
+    BUT_ONLY
+  END
+END
+
+ACTION_FOR_EACH nb IN ~bpdrif01~ ~bpdrif02~ ~bpdrifm1~ ~cbdrimml~ ~cbdrimsl~ BEGIN
+  ACTION_IF FILE_EXISTS_IN_GAME ~%nb%.cre~ BEGIN //Drider Males
+    COPY_EXISTING ~%nb%.cre~ ~override~
+      PATCH_INCLUDE ~infinityanimations/lib/fj_cre_validity.tpp~
+      PATCH_IF vl BEGIN
+        PATCH_INCLUDE ~infinityanimations/lib/fj_cre_reindex.tpp~
+        WRITE_SHORT 0x28 0x5002 //Animation (drider_male)
+        WRITE_BYTE 0x237 1 //Sex (male)
+        WRITE_BYTE 0x271 255 //General (monster)
+        READ_BYTE 0x275 gd //Gender
+        PATCH_IF (gd != 6) AND (gd != 9) BEGIN //If not summoned
+          WRITE_BYTE 0x275 1 //male
+        END
+        SAY INITIAL_MEETING ~~ [T-DRM06B]
+        SAY MORALE ~~ [T-DRM08A]
+        SAY UNHAPPY_BREAKING_POINT ~~ [T-DRM08A]
+        SAY BATTLE_CRY1 ~~ [T-DRM01A]
+        SAY BATTLE_CRY2 ~~ [T-DRM01B]
+        SAY BATTLE_CRY3 ~~ [T-DRM02A]
+        SAY BATTLE_CRY4 ~~ [T-DRM05A]
+        SAY ATTACK1 ~~ [T-DRM04A]
+        SAY DAMAGE ~~ [T-DRM07B]
+        SAY DYING ~~ [T-DRM09A]
+        SAY SELECT_COMMON1 ~~ [T-DRM03A]
+        SAY SELECT_COMMON2 ~~ [T-DRM03B]
+        SAY SELECT_COMMON3 ~~ [T-DRM04B]
+        SAY SELECT_COMMON4 ~~ [T-DRM05B]
+        SAY CRITICAL_MISS ~~ [T-DRM06A]
+        SAY SPELL_DISRUPTED ~~ [T-DRM05C]
+      END
+    BUT_ONLY
+  END
+END
+
+ACTION_FOR_EACH nb IN ~bugarch~ ~bugbear~ ~cbbgber1~ ~cbbgbera~ ~cbbgberb~ ~cbbgberc~ ~cbbgberd~ BEGIN
+  ACTION_IF FILE_EXISTS_IN_GAME ~%nb%.cre~ BEGIN //Bugbears
+    COPY_EXISTING ~%nb%.cre~ ~override~
+      PATCH_INCLUDE ~infinityanimations/lib/fj_cre_validity.tpp~
+      PATCH_IF vl BEGIN
+        PATCH_INCLUDE ~infinityanimations/lib/fj_cre_reindex.tpp~
+        WRITE_SHORT 0x28 0x500e //Animation (bugbear)
+        READ_BYTE 0x237 sx //Sex
+        PATCH_IF sx != 2 BEGIN //If not female
+          sx = 1
+          WRITE_BYTE 0x237 1 //Sex (male)
+        END
+        WRITE_BYTE 0x271 1 //General (humanoid)
+        READ_BYTE 0x275 gd //Gender
+        PATCH_IF (gd != 6) AND ((gd != 2) OR (sx = 1)) BEGIN //If not summoned and not female
+          WRITE_BYTE 0x275 1 //male
+        END
+        SAY INITIAL_MEETING ~~ [T-BUG08A]
+        SAY MORALE ~~ [T-BUG09A]
+        SAY UNHAPPY_BREAKING_POINT ~~ [T-BUG09A]
+        SAY BATTLE_CRY1 ~~ [T-BUG01A]
+        SAY BATTLE_CRY2 ~~ [T-BUG02A]
+        SAY ATTACK1 ~~ [T-BUG03A]
+        SAY DAMAGE ~~ [T-BUG07A]
+        SAY DYING ~~ [T-BUG10A]
+        SAY SELECT_COMMON1 ~~ [T-BUG01A]
+        SAY SELECT_COMMON2 ~~ [T-BUG04A]
+        PATCH_IF (~%SOURCE_RES%~ STRING_EQUAL_CASE ~bugarch~ = 1) BEGIN
+          REMOVE_CRE_ITEM ~helm01~ ~helmnoan~ ~bow03~ ~sw1h01~ ~arow01~ ~shld03~ ~ax1h04~ ~blun04~ //Animation consistency
+          REPLACE_CRE_ITEM ~helmnoan~ #0 #0 #0 ~NONE~ ~HELMET~ //Helmet (No Animation)
+          REPLACE_CRE_ITEM ~ax1h04~ #10 #0 #0 ~NONE~ ~WEAPON1~ EQUIP //Throwing Axe
+          REPLACE_CRE_ITEM ~ax1h04~ #10 #0 #0 ~NONE~ ~WEAPON2~ //Throwing Axe
+          REPLACE_CRE_ITEM ~blun04~ #0 #0 #0 ~NONE~ ~WEAPON3~ //Mace
+          WRITE_BYTE 0x6e 0 //Large swords (was 3)
+          WRITE_BYTE 0x70 0 //Bows (was 1)
+          WRITE_BYTE 0x72 1 //Blunt weapons
+          WRITE_BYTE 0x74 3 //Axes
+        END
+        PATCH_IF (~%SOURCE_RES%~ STRING_EQUAL_CASE ~bugbear~ = 1) BEGIN
+          REMOVE_CRE_ITEM ~helm01~ ~helmnoan~ ~bow03~ ~sw1hbug~ ~shld03~ ~blun06~ //Animation consistency
+          REPLACE_CRE_ITEM ~helmnoan~ #0 #0 #0 ~NONE~ ~HELMET~ //Helmet (No Animation)
+          REPLACE_CRE_ITEM ~blun06~ #0 #0 #0 ~NONE~ ~WEAPON1~ EQUIP //Morning Star
+          WRITE_BYTE 0x6e 1 //Large swords (was 3)
+          WRITE_BYTE 0x73 3 //Spiked weapons
+        END
+      END
+    BUT_ONLY
+  END
+END
+
+ACTION_FOR_EACH nb IN ~cbbgber~ ~cbbgber2~ ~cbbgberw~ ~cbbgberx~ ~cbbgbery~ ~cbbgberz~ BEGIN
+  ACTION_IF FILE_EXISTS_IN_GAME ~%nb%.cre~ BEGIN //Bugbear Captains
+    COPY_EXISTING ~%nb%.cre~ ~override~
+      PATCH_INCLUDE ~infinityanimations/lib/fj_cre_validity.tpp~
+      PATCH_IF vl BEGIN
+        PATCH_INCLUDE ~infinityanimations/lib/fj_cre_reindex.tpp~
+        WRITE_SHORT 0x28 0x500f //Animation (bugbear_captain)
+        READ_BYTE 0x237 sx //Sex
+        PATCH_IF sx != 2 BEGIN //If not female
+          sx = 1
+          WRITE_BYTE 0x237 1 //Sex (male)
+        END
+        WRITE_BYTE 0x271 1 //General (humanoid)
+        READ_BYTE 0x275 gd //Gender
+        PATCH_IF (gd != 6) AND ((gd != 2) OR (sx = 1)) BEGIN //If not summoned and not female
+          WRITE_BYTE 0x275 1 //male
+        END
+        SAY INITIAL_MEETING ~~ [T-BGC08A]
+        SAY MORALE ~~ [T-BGC09A]
+        SAY UNHAPPY_BREAKING_POINT ~~ [T-BGC09A]
+        SAY BATTLE_CRY1 ~~ [T-BGC01A]
+        SAY BATTLE_CRY2 ~~ [T-BGC02A]
+        SAY ATTACK1 ~~ [T-BGC03A]
+        SAY DAMAGE ~~ [T-BGC07A]
+        SAY DYING ~~ [T-BGC10A]
+        SAY SELECT_COMMON1 ~~ [T-BGC01A]
+        SAY SELECT_COMMON2 ~~ [T-BGC04A]
+      END
+    BUT_ONLY
+  END
+END
+
+ACTION_FOR_EACH nb IN ~caddem14~ ~f_mari~ ~garmari2~ ~godmari1~ ~heldem2~ ~psmari2~ ~psmarile~ ~sd_sif~ BEGIN
+  ACTION_IF FILE_EXISTS_IN_GAME ~%nb%.cre~ BEGIN //Mariliths IWD
+    COPY_EXISTING ~%nb%.cre~ ~override~
+      PATCH_INCLUDE ~infinityanimations/lib/fj_cre_validity.tpp~
+      PATCH_IF vl BEGIN
+        PATCH_INCLUDE ~infinityanimations/lib/fj_cre_reindex.tpp~
+        WRITE_SHORT 0x28 0x502a //Animation (marilith)
+        WRITE_BYTE 0x237 2 //Sex (female)
+        WRITE_BYTE 0x271 255 //General (monster)
+        READ_BYTE 0x275 gd //Gender
+        PATCH_IF (gd != 6) AND (gd != 9) BEGIN //If not summoned
+          WRITE_BYTE 0x275 2 //female
+        END
+        WRITE_BYTE 0x272 121 //Race (fiend)
+        WRITE_BYTE 0x273 160 //Class (tanar'ri)
+      END
+    BUT_ONLY
+  END
+END
+
+ACTION_FOR_EACH nb IN ~brefr1~ ~brefr2~ ~ddfrost1~ ~f_giantf~ ~frost01~ ~frostgg~ ~frostgi~ ~frostgi2~ ~frostgi3~ ~frostgi4~ ~frostham~ ~giantfg~ ~giantfn~ ~giantfs~ ~gorg~ ~hillfro1~ ~hillfro2~ ~hillfro3~ ~icebeard~ ~joril~ ~knord~ ~zacare2~ BEGIN
+  ACTION_IF FILE_EXISTS_IN_GAME ~%nb%.cre~ BEGIN //Frost Giants
+    COPY_EXISTING ~%nb%.cre~ ~override~
+      PATCH_INCLUDE ~infinityanimations/lib/fj_cre_validity.tpp~
+      PATCH_IF vl BEGIN
+        PATCH_INCLUDE ~infinityanimations/lib/fj_cre_reindex.tpp~
+        WRITE_SHORT 0x28 0x502b //Animation (frost_giant)
+        READ_BYTE 0x237 sx //Sex
+        PATCH_IF sx != 2 BEGIN //If not female
+          sx = 1
+          WRITE_BYTE 0x237 1 //Sex (male)
+        END
+        WRITE_BYTE 0x271 5 //General (gianthumanoid)
+        WRITE_BYTE 0x272 142 //Race (giant)
+        READ_BYTE 0x275 gd //Gender
+        PATCH_IF (gd != 6) AND ((gd != 2) OR (sx = 1)) BEGIN //If not summoned and not female
+          WRITE_BYTE 0x275 1 //male
+        END
+      END
+    BUT_ONLY
+  END
+END
+
+ACTION_FOR_EACH nb IN ~f_bel~ ~grean~ ~kiotsi~ BEGIN
+  ACTION_IF FILE_EXISTS_IN_GAME ~%nb%.cre~ BEGIN //Belhifets
+    COPY_EXISTING ~%nb%.cre~ ~override~
+      PATCH_INCLUDE ~infinityanimations/lib/fj_cre_validity.tpp~
+      PATCH_IF vl BEGIN
+        PATCH_INCLUDE ~infinityanimations/lib/fj_cre_reindex.tpp~
+        WRITE_SHORT 0x28 0x502f //Animation (belhifet)
+        WRITE_BYTE 0x237 1 //Sex (male)
+        WRITE_BYTE 0x271 255 //General (monster)
+        READ_BYTE 0x275 gd //Gender
+        PATCH_IF (gd != 6) AND (gd != 9) BEGIN //If not summoned
+          WRITE_BYTE 0x275 1 //male
+        END
+      END
+    BUT_ONLY
+  END
+END
+
+ACTION_IF FILE_EXISTS_IN_GAME ~giaearth.cre~ BEGIN //Iron Golem IWD
+  COPY_EXISTING ~giaearth.cre~ ~override~
+    PATCH_INCLUDE ~infinityanimations/lib/fj_cre_validity.tpp~
+    PATCH_IF vl BEGIN
+      PATCH_INCLUDE ~infinityanimations/lib/fj_cre_reindex.tpp~
+      WRITE_SHORT 0x28 0x504b //Animation (iron_golem_iwd)
+    END
+  BUT_ONLY
+END
+
+ACTION_FOR_EACH nb IN ~cbtwrmgr~ ~cbtwrmls~ BEGIN
+  ACTION_IF FILE_EXISTS_IN_GAME ~%nb%.cre~ BEGIN //Remorhazes
+    COPY_EXISTING ~%nb%.cre~ ~override~
+      PATCH_INCLUDE ~infinityanimations/lib/fj_cre_validity.tpp~
+      PATCH_IF vl BEGIN
+        PATCH_INCLUDE ~infinityanimations/lib/fj_cre_reindex.tpp~
+        WRITE_SHORT 0x28 0x504c //Animation (remorhaz)
+      END
+    BUT_ONLY
+  END
+END
+
+ACTION_FOR_EACH nb IN ~purang~ ~verbdead~ ~verbeeg~ ~verbeegd~ BEGIN
+  ACTION_IF FILE_EXISTS_IN_GAME ~%nb%.cre~ BEGIN //Verbeegs
+    COPY_EXISTING ~%nb%.cre~ ~override~
+      PATCH_INCLUDE ~infinityanimations/lib/t-cre_fixer.tpp~ //These CREs need fixing because of hosed slots
+      WRITE_SHORT 0x28 0x5050 //Animation (verbeeg)
+      WRITE_BYTE 0x237 1 //Sex (male)
+      WRITE_BYTE 0x271 5 //General (gianthumanoid)
+      WRITE_BYTE 0x272 142 //Race (giant)
+      READ_BYTE 0x275 gd //Gender
+      PATCH_IF (gd != 6) BEGIN //If not summoned
+        WRITE_BYTE 0x275 1 //male
+      END
+    BUT_ONLY
+  END
+END
+
+ACTION_FOR_EACH nb IN ~bptreant~ ~bptrebos~ ~bptreeld~ ~bptresu~ ~cbtreant~ BEGIN
+  ACTION_IF FILE_EXISTS_IN_GAME ~%nb%.cre~ BEGIN //Treants
+    COPY_EXISTING ~%nb%.cre~ ~override~
+      PATCH_INCLUDE ~infinityanimations/lib/fj_cre_validity.tpp~
+      PATCH_IF vl BEGIN
+        PATCH_INCLUDE ~infinityanimations/lib/fj_cre_reindex.tpp~
+        WRITE_SHORT 0x28 0x523d //Animation (dark_treant)
+        SAY BATTLE_CRY1 ~~ [T-TRE01A]
+        SAY BATTLE_CRY2 ~~ [T-TRE02A]
+        SAY BATTLE_CRY3 ~~ [T-TRE04A]
+        SAY ATTACK1 ~~ [T-TRE03A]
+        SAY DAMAGE ~~ [T-TRE07A]
+        SAY DYING ~~ [T-TRE09A]
+        SAY SELECT_COMMON1 ~~ [T-TRE01A]
+        SAY SELECT_COMMON2 ~~ [T-TRE02A]
+        SAY SELECT_COMMON3 ~~ [T-TRE11A]
+        SAY CRITICAL_MISS ~~ [T-TRE08A]
+        SAY SPELL_DISRUPTED ~~ [T-TRE10A]
+      END
+    BUT_ONLY
+  END
+END
+
+ACTION_FOR_EACH nb IN ~cbharpy1~ ~cbharpya~ ~cbharpyb~ ~cbharpyc~ ~cbharpyd~ BEGIN
+  ACTION_IF FILE_EXISTS_IN_GAME ~%nb%.cre~ BEGIN //Black Harpies
+    COPY_EXISTING ~%nb%.cre~ ~override~
+      PATCH_INCLUDE ~infinityanimations/lib/fj_cre_validity.tpp~
+      PATCH_IF vl BEGIN
+        PATCH_INCLUDE ~infinityanimations/lib/fj_cre_reindex.tpp~
+        WRITE_SHORT 0x28 0x5240 //Animation (half-dragon_black)
+        WRITE_BYTE 0x237 2 //Sex (female)
+        READ_BYTE 0x275 gd //Gender
+        PATCH_IF (gd != 6) AND (gd != 9) BEGIN //If not summoned
+          WRITE_BYTE 0x275 2 //female
+        END
+        SAY BATTLE_CRY1 ~~ [T-HDR01A]
+        SAY BATTLE_CRY2 ~~ [T-HDR01B]
+        SAY BATTLE_CRY3 ~~ [T-HDR05A]
+        SAY ATTACK1 ~~ [T-HDR03A]
+        SAY DAMAGE ~~ [T-HDR07A]
+        SAY DYING ~~ [T-HDR09A]
+        SAY SELECT_COMMON1 ~~ [T-HDR02A]
+        SAY SELECT_COMMON2 ~~ [T-HDR03B]
+        SAY SELECT_COMMON3 ~~ [T-HDR04A]
+        SAY CRITICAL_MISS ~~ [T-HDR06B]
+        SAY SPELL_DISRUPTED ~~ [T-HDR06A]
+      END
+    BUT_ONLY
+  END
+END
+
+ACTION_FOR_EACH nb IN ~cbharpy2~ ~cbharpyw~ ~cbharpyx~ ~cbharpyy~ ~cbharpyz~ ~malar1~ ~malar10~ ~malar11~ ~malar12~ ~malar15~ ~malar16~ ~malar17~ ~malar18~ ~malar19~ ~malar3~ ~malar4~ ~malar5~ ~malar6~ ~malar7~ ~malar8~ ~malar9~ BEGIN
+  ACTION_IF FILE_EXISTS_IN_GAME ~%nb%.cre~ BEGIN //Red Harpies
+    COPY_EXISTING ~%nb%.cre~ ~override~
+      PATCH_INCLUDE ~infinityanimations/lib/fj_cre_validity.tpp~
+      PATCH_IF vl BEGIN
+        PATCH_INCLUDE ~infinityanimations/lib/fj_cre_reindex.tpp~
+        WRITE_SHORT 0x28 0x5241 //Animation (half-dragon_red)
+        WRITE_BYTE 0x237 2 //Sex (female)
+        READ_BYTE 0x275 gd //Gender
+        PATCH_IF (gd != 6) AND (gd != 9) BEGIN //If not summoned
+          WRITE_BYTE 0x275 2 //female
+        END
+        SAY BATTLE_CRY1 ~~ [T-HDR01A]
+        SAY BATTLE_CRY2 ~~ [T-HDR01B]
+        SAY BATTLE_CRY3 ~~ [T-HDR05B]
+        SAY ATTACK1 ~~ [T-HDR04B]
+        SAY DAMAGE ~~ [T-HDR08A]
+        SAY DYING ~~ [T-HDR09C]
+        SAY SELECT_COMMON1 ~~ [T-HDR02A]
+        SAY SELECT_COMMON2 ~~ [T-HDR03B]
+        SAY SELECT_COMMON3 ~~ [T-HDR04A]
+        SAY CRITICAL_MISS ~~ [T-HDR06B]
+        SAY SPELL_DISRUPTED ~~ [T-HDR06A]
+      END
+    BUT_ONLY
+  END
+END
+
+ACTION_FOR_EACH nb IN ~chxzar~ ~shdwsam1~ ~shdwsam2~ ~shdwsam3~ ~shdwsam4~ ~shdwsam5~ ~shdwsam6~ ~shdwsam7~ ~shdwsam8~ ~sumsamur~ ~zacare1~ BEGIN
+  ACTION_IF FILE_EXISTS_IN_GAME ~%nb%.cre~ BEGIN //Samurai
+    COPY_EXISTING ~%nb%.cre~ ~override~
+      PATCH_INCLUDE ~infinityanimations/lib/fj_cre_validity.tpp~
+      PATCH_IF vl BEGIN
+        PATCH_INCLUDE ~infinityanimations/lib/fj_cre_reindex.tpp~
+        WRITE_SHORT 0x28 0x5242 //Animation (isair)
+        WRITE_BYTE 0x237 1 //Sex (male)
+        READ_BYTE 0x275 gd //Gender
+        PATCH_IF (gd != 6) AND (gd != 9) BEGIN //If not summoned
+          WRITE_BYTE 0x275 1 //male
+        END
+        PATCH_IF SLONG_AT BATTLE_CRY1 < 1 BEGIN
+          SAY BATTLE_CRY1 ~~ [T-ISA01A]
+          SAY BATTLE_CRY2 ~~ [T-ISA01B]
+          SAY BATTLE_CRY3 ~~ [T-ISA04B]
+          SAY BATTLE_CRY4 ~~ [T-ISA05B]
+          SAY BATTLE_CRY5 ~~ [T-ISA09B]
+        END
+        PATCH_IF SLONG_AT ATTACK1 < 1 BEGIN
+          SAY ATTACK1 ~~ [T-ISA05A]
+        END
+        PATCH_IF SLONG_AT DAMAGE < 1 BEGIN
+          SAY DAMAGE ~~ [T-ISA07]
+        END
+        PATCH_IF SLONG_AT DYING < 1 BEGIN
+          SAY DYING ~~ [T-ISA09A]
+        END
+        PATCH_IF SLONG_AT SELECT_COMMON1 < 1 BEGIN
+          SAY SELECT_COMMON1 ~~ [T-ISA02A]
+          SAY SELECT_COMMON2 ~~ [T-ISA02B]
+          SAY SELECT_COMMON3 ~~ [T-ISA04A]
+          SAY SELECT_COMMON4 ~~ [T-ISA08]
+        END
+        PATCH_IF SLONG_AT CRITICAL_MISS < 1 BEGIN
+          SAY CRITICAL_MISS ~~ [T-ISA03A]
+        END
+        PATCH_IF SLONG_AT SPELL_DISRUPTED < 1 BEGIN
+          SAY SPELL_DISRUPTED ~~ [T-ISA03B]
+        END
+      END
+    BUT_ONLY
+  END
+END
+
+ACTION_FOR_EACH nb IN ~abishai1~ ~babi~ ~duegabis~ ~godabis1~ ~godabis2~ ~grenabi1~ ~nsabish~ ~psbaat02~ ~psbaat2a~ ~rabi~ ~redabi01~ ~remorhaz~ ~remorle~ ~wardabi1~ ~wardabi2~ BEGIN
+  ACTION_IF FILE_EXISTS_IN_GAME ~%nb%.cre~ BEGIN //Abishai
+    COPY_EXISTING ~%nb%.cre~ ~override~
+      PATCH_INCLUDE ~infinityanimations/lib/fj_cre_validity.tpp~
+      PATCH_IF vl BEGIN
+        PATCH_INCLUDE ~infinityanimations/lib/fj_cre_reindex.tpp~
+        WRITE_SHORT 0x28 0x5249 //Animation (abishai_white)
+        WRITE_BYTE 0x237 1 //Sex (male)
+        WRITE_BYTE 0x271 255 //General (monster)
+        READ_BYTE 0x275 gd //Gender
+        PATCH_IF (gd != 6) AND (gd != 9) BEGIN //If not summoned
+          WRITE_BYTE 0x275 1 //male
+        END
+        WRITE_BYTE 0x272 121 //Race (fiend)
+        WRITE_BYTE 0x273 179 //Class (devil)
+        WRITE_BYTE 0x27b 19 //Alignment (lawful evil by definition)
+      END
+    BUT_ONLY
+  END
+END
+
+ACTION_IF FILE_EXISTS_IN_GAME ~f_harpy.cre~ BEGIN //Harpy
+  COPY_EXISTING ~f_harpy.cre~ ~override~
+    PATCH_IF SOURCE_SIZE > 0x2d3 BEGIN
+      WRITE_SHORT 0x28 0x5269 //Animation (harpy)
+    END
+  BUT_ONLY
+END
+
+ACTION_IF FILE_EXISTS_IN_GAME ~s#bov.cre~ BEGIN //Bovine
+  COPY_EXISTING ~s#bov.cre~ ~override~
+    PATCH_IF SOURCE_SIZE > 0x2d3 BEGIN
+      WRITE_SHORT 0x28 0x5292 //Animation (bovine_axe_thing)
+    END
+  BUT_ONLY
+END
+
+ACTION_IF FILE_EXISTS_IN_GAME ~s#crow.cre~ BEGIN //Scarecrow
+  COPY_EXISTING ~s#crow.cre~ ~override~
+    PATCH_IF SOURCE_SIZE > 0x2d3 BEGIN
+      WRITE_SHORT 0x28 0x5273 //Animation (scarecrow_nwn)
+    END
+  BUT_ONLY
+END
+
+ACTION_FOR_EACH nb IN ~doomleut~ ~doomwarr~ ~lethias~ BEGIN
+  ACTION_IF FILE_EXISTS_IN_GAME ~%nb%.cre~ BEGIN //Bronze Sentries
+    COPY_EXISTING ~%nb%.cre~ ~override~
+      PATCH_INCLUDE ~infinityanimations/lib/fj_cre_validity.tpp~
+      PATCH_IF vl BEGIN
+        PATCH_INCLUDE ~infinityanimations/lib/fj_cre_reindex.tpp~
+        WRITE_SHORT 0x28 0x5279 //Animation (animated_plate_bronze)
+      END
+    BUT_ONLY
+  END
+END
+
+ACTION_FOR_EACH nb IN ~doomguar~ ~rdundea2~ ~rdundea3~ ~rdundea4~ ~rdundead~ BEGIN
+  ACTION_IF FILE_EXISTS_IN_GAME ~%nb%.cre~ BEGIN //Green Sentries
+    COPY_EXISTING ~%nb%.cre~ ~override~
+      PATCH_INCLUDE ~infinityanimations/lib/fj_cre_validity.tpp~
+      PATCH_IF vl BEGIN
+        PATCH_INCLUDE ~infinityanimations/lib/fj_cre_reindex.tpp~
+        WRITE_SHORT 0x28 0x527b //Animation (animated_plate_green)
+      END
+    BUT_ONLY
+  END
+END
+
+ACTION_FOR_EACH nb IN ~cbnrt001~ ~cbnrt002~ ~cbnrt003~ ~cbnrt020~ BEGIN
+  ACTION_IF FILE_EXISTS_IN_GAME ~%nb%.cre~ BEGIN //Tan Barbarians
+    COPY_EXISTING ~%nb%.cre~ ~override~
+      PATCH_INCLUDE ~infinityanimations/lib/fj_cre_validity.tpp~
+      PATCH_IF vl BEGIN
+        PATCH_INCLUDE ~infinityanimations/lib/fj_cre_reindex.tpp~
+        WRITE_SHORT 0x28 0x5280 //Animation (barbarian_warrior_tan)
+        WRITE_BYTE 0x237 1 //Sex (male)
+        WRITE_BYTE 0x271 1 //General (humanoid)
+        WRITE_BYTE 0x272 1 //Race (human)
+        READ_BYTE 0x275 gd //Gender
+        PATCH_IF (gd != 6) BEGIN //If not summoned
+          WRITE_BYTE 0x275 1 //male
+        END
+      END
+    BUT_ONLY
+  END
+END
+
+ACTION_FOR_EACH nb IN ~cbnrt004~ ~cbnrt005~ ~cbnrt010~ ~cbnrt025~ BEGIN
+  ACTION_IF FILE_EXISTS_IN_GAME ~%nb%.cre~ BEGIN //Red Barbarians
+    COPY_EXISTING ~%nb%.cre~ ~override~
+      PATCH_INCLUDE ~infinityanimations/lib/fj_cre_validity.tpp~
+      PATCH_IF vl BEGIN
+        PATCH_INCLUDE ~infinityanimations/lib/fj_cre_reindex.tpp~
+        WRITE_SHORT 0x28 0x5281 //Animation (barbarian_warrior_red)
+        WRITE_BYTE 0x237 1 //Sex (male)
+        WRITE_BYTE 0x271 1 //General (humanoid)
+        WRITE_BYTE 0x272 1 //Race (human)
+        READ_BYTE 0x275 gd //Gender
+        PATCH_IF (gd != 6) BEGIN //If not summoned
+          WRITE_BYTE 0x275 1 //male
+        END
+      END
+    BUT_ONLY
+  END
+END
+
+ACTION_FOR_EACH nb IN ~cbssyeti~ ~yeti1~ ~yeti2~ ~yeti3~ ~yetiche2~ ~yetichef~ ~yetineut~ ~yetitund~ BEGIN
+  ACTION_IF FILE_EXISTS_IN_GAME ~%nb%.cre~ BEGIN //Yeti
+    COPY_EXISTING ~%nb%.cre~ ~override~
+      PATCH_INCLUDE ~infinityanimations/lib/fj_cre_validity.tpp~
+      PATCH_IF vl BEGIN
+        PATCH_INCLUDE ~infinityanimations/lib/fj_cre_reindex.tpp~
+        WRITE_SHORT 0x28 0x528b //Animation (yeti)
+        READ_BYTE 0x237 sx //Sex
+        PATCH_IF sx != 2 BEGIN //If not female
+          sx = 1
+          WRITE_BYTE 0x237 1 //Sex (male)
+        END
+        READ_BYTE 0x275 gd //Gender
+        PATCH_IF (gd != 6) AND ((gd != 2) OR (sx = 1)) BEGIN //If not summoned and not female
+          WRITE_BYTE 0x275 1 //male
+        END
+      END
+    BUT_ONLY
+  END
+END
+
+ACTION_IF FILE_EXISTS_IN_GAME ~pslady.cre~ BEGIN //Lady of Pain
+  COPY_EXISTING ~pslady.cre~ ~override~
+    PATCH_IF SOURCE_SIZE > 0x2d3 BEGIN
+      WRITE_SHORT 0x28 0x5c02 //Animation ID (lady_of_pain)
+      WRITE_BYTE 0x237 2 //Sex (female)
+      SAY INITIAL_MEETING #73121 //Solar soundset (she is not Elminster)
+      SAY BATTLE_CRY1 #73123
+      SAY ATTACK1 #73122
+      SAY DAMAGE #73124
+      SAY DYING #73125
+      SAY SELECT_COMMON1 #73121
+    END
+  BUT_ONLY
+END
+
+ACTION_IF FILE_EXISTS_IN_GAME ~bptarget.cre~ THEN BEGIN //Big Picture
+  COPY_EXISTING ~bptarget.cre~ ~override~ //Target
+    PATCH_IF SOURCE_SIZE > 0x2d3 BEGIN
+      WRITE_SHORT 0x28 0x7f38 //Animation ID (wizard_eye, was goblin_axe)
+    END
+  BUT_ONLY
+END
+
+COPY_EXISTING ~planet01.cre~ ~override~ //Planetar
+  PATCH_IF SOURCE_SIZE > 0x2d3 BEGIN
+    WRITE_SHORT 0x28 0x7f3c //Animation ID (antisolar, was tanar'ri)
+  END
+BUT_ONLY
+
+ACTION_FOR_EACH nb IN ~caddem6~ ~demmarsu~ ~demosum1~ ~dw#grmar~ ~finmaril~ ~garmari1~ ~gorwom03~ ~heldem1~ ~icmarili~ ~maril~ ~melsum05~ ~psmari1~ ~r#asdemn~ ~shamon~ ~va#maril~ ~yux01~ ~yuxbossa~ ~z_2spe2~ BEGIN
+  ACTION_IF FILE_EXISTS_IN_GAME ~%nb%.cre~ BEGIN //Mariliths BG2
+    COPY_EXISTING ~%nb%.cre~ ~override~
+      PATCH_INCLUDE ~infinityanimations/lib/fj_cre_validity.tpp~
+      PATCH_IF vl BEGIN
+        PATCH_INCLUDE ~infinityanimations/lib/fj_cre_reindex.tpp~
+        WRITE_SHORT 0x28 0xe090 //Animation (marilith)
+        WRITE_BYTE 0x237 2 //Sex (female)
+        WRITE_BYTE 0x271 255 //General (monster)
+        READ_BYTE 0x275 gd //Gender
+        PATCH_IF (gd != 6) AND (gd != 9) BEGIN //If not summoned
+          WRITE_BYTE 0x275 2 //female
+        END
+        WRITE_BYTE 0x272 121 //Race (fiend)
+        WRITE_BYTE 0x273 160 //Class (tanar'ri)
+        PATCH_IF (~demosum1 gorwom03 icmarili melsum05~ STRING_CONTAINS_REGEXP ~%SOURCE_RES%~ = 1) OR ((~demosum1 gorwom03 icmarili melsum05~ STRING_CONTAINS_REGEXP ~%SOURCE_RES%~ = 0) AND (NOT FILE_EXISTS_IN_GAME ~rr#mar01.wav~)) BEGIN
+          SAY INITIAL_MEETING #55379 //[SNAKE03]
+          SAY MORALE #61765 //No! Nooo! I must be away! [UNEARF08]
+          SAY UNHAPPY_BREAKING_POINT #61765
+          SAY BATTLE_CRY1 #61761 //I shall enjoy gutting you like the dog you are... [UNEARF04]
+          SAY BATTLE_CRY2 #61760 //Death will only be the beginning for you... [UNEARF03]
+          SAY BATTLE_CRY3 #61762 //Now the time has come for you to pay... [UNEARF05]
+          SAY ATTACK1 #55380 //[SNAKE04]
+          SAY DAMAGE #61763 //[UNEARF06]
+          SAY DYING #61764 //[UNEARF07]
+          SAY HURT #55377 //[SNAKE01]
+          SAY SELECT_COMMON1 #61758 //Your death lies here, fool! [UNEARF01]
+          SAY SELECT_COMMON2 #61759 //This is your end, I assure you. [UNEARF02]
+          SAY SELECT_COMMON3 #55378 //[SNAKE02]
+        END
+      END
+    BUT_ONLY
+  END
+END
+
+ACTION_FOR_EACH nb IN ~caddem15~ ~caddem23~ ~caddem7~ ~cambion~ ~cultmo2~ ~deaddem1~ ~demcor01~ ~demcorsu~ ~f_corn~ ~f_corn02~ ~gorbat3~ ~nscornug~ ~nsdemon1~ ~nsmaril~ ~psbaat~ ~psbaat01~ ~psbaat02~ ~psbaat2a~ ~psbaatl~ ~rahvin_r~ ~telcor1~ ~xsadfae~ ~z_daemo~ ~zagorr~ BEGIN
+  ACTION_IF FILE_EXISTS_IN_GAME ~%nb%.cre~ BEGIN //Cornugons
+    COPY_EXISTING ~%nb%.cre~ ~override~
+      PATCH_INCLUDE ~infinityanimations/lib/fj_cre_validity.tpp~
+      PATCH_IF vl BEGIN
+        PATCH_INCLUDE ~infinityanimations/lib/fj_cre_reindex.tpp~
+        WRITE_SHORT 0x28 0xe0e0 //Animation (cornugon)
+        WRITE_BYTE 0x237 1 //Sex (male)
+        WRITE_BYTE 0x271 255 //General (monster)
+        READ_BYTE 0x275 gd //Gender
+        PATCH_IF (gd != 6) AND (gd != 9) BEGIN //If not summoned
+          WRITE_BYTE 0x275 1 //male
+        END
+        WRITE_BYTE 0x272 121 //Race (fiend)
+        WRITE_BYTE 0x273 179 //Class (devil)
+        WRITE_BYTE 0x27b 19 //Alignment (lawful evil by definition)
+      END
+    BUT_ONLY
+  END
+END
+
+ACTION_FOR_EACH nb IN ~shadow01~ ~shadowsu~ ~shadsoul~ ~shatsoul~ ~vampsoul~ BEGIN
+  ACTION_IF FILE_EXISTS_IN_GAME ~%nb%.cre~ BEGIN //Shadows (Small)
+    COPY_EXISTING ~%nb%.cre~ ~override~
+      PATCH_INCLUDE ~infinityanimations/lib/fj_cre_validity.tpp~
+      PATCH_IF vl BEGIN
+        PATCH_INCLUDE ~infinityanimations/lib/fj_cre_reindex.tpp~
+        WRITE_SHORT 0x28 0xea10 //Animation (shadow_small_iwd)
+      END
+    BUT_ONLY
+  END
+END
+
+ACTION_IF FILE_EXISTS_IN_GAME ~shadfi02.cre~ BEGIN //Shadow (Large)
+  COPY_EXISTING ~shadfi02.cre~ ~override~
+    PATCH_IF SOURCE_SIZE > 0x2d3 BEGIN
+      WRITE_SHORT 0x28 0xea20 //Animation (shadow_large_iwd)
+    END
+  BUT_ONLY
+END
+VERBOSE
+
+//! Humanoid Animation Fixes ////////////////////////////////////////////////
+BEGIN @107 //Humanoid Animation Fixes
+DESIGNATED 25
+REQUIRE_COMPONENT ~setup-infinityanimations.tp2~ 0 @26 //This component requires the main component.
+ACTION_IF NOT MOD_IS_INSTALLED ~setup-infinityanimations.tp2~ 0 BEGIN
+  FAIL @26 //This component requires the main component.
+END
+
+SILENT
+ACTION_FOR_EACH t-bcre IN ~%tsf%lambrid~ ~%tsf%lamhusb~ ~%tsf%lampun2~ ~%tsp%heogurd~ ~%tsu%bardol~ ~%tsu%benjy~ ~%tsu%bill~ ~%tsu%bouncer~ ~%tsu%caedmo~ ~%tsu%chimp5~ ~%tsu%dandal~ ~%tsu%fergus~ ~%tsu%ffhunt~ ~%tsu%ffsleep~ ~%tsu%flam~ ~%tsu%flam10~ ~%tsu%flam11~ ~%tsu%flam12~ ~%tsu%flam13~ ~%tsu%flam2~ ~%tsu%flam4~ ~%tsu%flam5~ ~%tsu%flam6~ ~%tsu%flam7~ ~%tsu%flam8~ ~%tsu%flam9~ ~%tsu%flamal~ ~%tsu%flamc7~ ~%tsu%flame~ ~%tsu%flamen~ ~%tsu%flamen2~ ~%tsu%flamgg~ ~%tsu%flampun~ ~%tsu%flamsco~ ~%tsu%flamvai~ ~%tsu%flamwiz~ ~%tsu%guard~ ~%tsu%jonavi~ ~%tsu%leaggu1~ ~%tsu%leaggu7~ ~%tsu%phoenix~ ~%tsu%sorrel~ ~%tsu%watchm~ ~0xgguadg~ ~0xrguadg~ ~0xsguadg~ ~bgflam6~ ~bgflam62~ ~bw05fd01~ ~bw05ffde~ ~bw05ffwr~ ~bw05fist~ ~c#ajdoug~ ~c#ajshbo~ ~cb287cpt~ ~cb304sbg~ ~cb351gd1~ ~cb351gd2~ ~cb351gd3~ ~cb351gd4~ ~cb351gd5~ ~cbhld0m5~ ~cbnrtlu1~ ~cbp3act3~ ~cbpheoix~ ~cbprison~ ~cbrtralt~ ~cbsobgr1~ ~cbsobgr2~ ~cbsobgr3~ ~cbsobgr4~ ~cbsobgr5~ ~cbsobgrd~ ~cbsougrd~ ~cbsousgt~ ~ccguard1~ ~cmsora1~ ~cmsora2~ ~copamb02~ ~copamb05~ ~crgor05~ ~deadb05~ ~dpimg1~ ~fhlkav~ ~fhterl~ ~guard1~ ~guard2~ ~guard3~ ~habrega~ ~haegan~ ~haguar01~ ~haguar02~ ~jugdar01~ ~kent~ ~korpimg1~ ~m#corin~ ~naldirt~ ~nscleric~ ~nteldod~ ~nteldod1~ ~pirmur03~ ~prisonk1~ ~sailned~ ~sguard4~ ~terl~ ~terl02~ ~trfued02~ ~trfued03~ ~trfued04~ ~trfued06~ ~trfued07~ ~trfued08~ ~trgrd01~ ~ubflam5~ ~uldgua1~ ~uldgua2~ ~vakfgt01~ ~valran03~ ~x#ajdoug~ ~x#xzgu02~ ~zodesak~ BEGIN
+  ACTION_IF FILE_EXISTS_IN_GAME ~%t-bcre%.cre~ BEGIN //Male Human Fighters
+    COPY_EXISTING ~%t-bcre%.cre~ ~override~
+      PATCH_INCLUDE ~infinityanimations/lib/fj_cre_validity.tpp~
+      PATCH_IF vl BEGIN
+        PATCH_INCLUDE ~infinityanimations/lib/fj_cre_reindex.tpp~
+        WRITE_SHORT 0x28 0x6100 //Animation (fighter_male_human, was cleric)
+        PATCH_IF (~%SOURCE_RES%~ STRING_EQUAL_CASE ~habrega~ = 1) BEGIN //Brega
+          WRITE_BYTE 0x238 18 //Strength (was 17 - has a composite bow)
+          WRITE_BYTE 0x239 54 //STR % bonus (he's a fighter after all)
+        END
+        WRITE_BYTE 0x237 1 //Sex (male)
+        PATCH_IF (BYTE_AT 0x273 = 4) OR (BYTE_AT 0x273 > 200) BEGIN //If invalid class
+          WRITE_BYTE 0x273 2 //Class (fighter)
+        END
+        WRITE_BYTE 0x275 1 //Gender (male)
+        PATCH_IF BYTE_AT 0x27b = 0 BEGIN //If no alignment
+          WRITE_BYTE 0x27b 0x12 //Alignment (lawful_neutral)
+        END
+      END
+    BUT_ONLY
+  END
+END
+
+ACTION_FOR_EACH t-bcre IN ~cbsbmd74~ ~sudead03~ ~suelf3~ ~udslv01~ ~ysnethr~ ~z_2elsa2~ ~z_2elsas~ BEGIN
+  ACTION_IF FILE_EXISTS_IN_GAME ~%t-bcre%.cre~ BEGIN //Male Elf Fighters
+    COPY_EXISTING ~%t-bcre%.cre~ ~override~
+      PATCH_INCLUDE ~infinityanimations/lib/fj_cre_validity.tpp~
+      PATCH_IF vl BEGIN
+        PATCH_INCLUDE ~infinityanimations/lib/fj_cre_reindex.tpp~
+        WRITE_SHORT 0x28 0x6101 //Animation (fighter_male_elf, was cleric)
+        WRITE_BYTE 0x237 1 //Sex (male)
+        WRITE_BYTE 0x275 1 //Gender (male)
+      END
+    BUT_ONLY
+  END
+END
+
+ACTION_FOR_EACH t-bcre IN ~army4~ ~bdbart01~ ~cb270ccg~ ~cbsbtvra~ ~cbsbtvrh~ ~ffbart~ ~ffcust08~ ~garjum~ ~pirpir06~ ~toady~ BEGIN
+  ACTION_IF FILE_EXISTS_IN_GAME ~%t-bcre%.cre~ BEGIN //Male Halfling Fighters
+    COPY_EXISTING ~%t-bcre%.cre~ ~override~
+      PATCH_INCLUDE ~infinityanimations/lib/fj_cre_validity.tpp~
+      PATCH_IF vl BEGIN
+        PATCH_INCLUDE ~infinityanimations/lib/fj_cre_reindex.tpp~
+        WRITE_SHORT 0x28 0x6103 //Animation (fighter_male_halfling, was cleric)
+      END
+    BUT_ONLY
+  END
+END
+
+ACTION_FOR_EACH t-bcre IN ~bylanna~ ~daslave2~ ~ffusher2~ ~%tsu%laola~ ~%tsu%leaggu2~ ~%tsp%heoarch~ ~trgrd03~ ~%tsu%vai~ BEGIN
+  ACTION_IF FILE_EXISTS_IN_GAME ~%t-bcre%.cre~ BEGIN //Female Human Fighters
+    COPY_EXISTING ~%t-bcre%.cre~ ~override~
+      PATCH_INCLUDE ~infinityanimations/lib/fj_cre_validity.tpp~
+      PATCH_IF vl BEGIN
+        PATCH_INCLUDE ~infinityanimations/lib/fj_cre_reindex.tpp~
+        WRITE_SHORT 0x28 0x6110 //Animation (fighter_female_human, was cleric)
+        WRITE_BYTE 0x237 2 //Sex (female)
+        PATCH_IF BYTE_AT 0x273 = 4 BEGIN //If thief
+          WRITE_BYTE 0x273 2 //Class (fighter)
+        END
+        WRITE_BYTE 0x275 2 //Gender (female)
+      END
+    BUT_ONLY
+  END
+END
+
+ACTION_FOR_EACH t-bcre IN ~bazdra01~ ~cbc8ctza~ ~cbceeb01~ ~cbisson1~ ~cbisson2~ ~%tbg%king~ BEGIN
+  ACTION_IF FILE_EXISTS_IN_GAME ~%t-bcre%.cre~ BEGIN //Male Human Mages
+    COPY_EXISTING ~%t-bcre%.cre~ ~override~
+      PATCH_INCLUDE ~infinityanimations/lib/fj_cre_validity.tpp~
+      PATCH_IF vl BEGIN
+        PATCH_INCLUDE ~infinityanimations/lib/fj_cre_reindex.tpp~
+        WRITE_SHORT 0x28 0x6200 //Animation (mage_male_human, was cleric)
+        WRITE_BYTE 0x237 1 //Sex (male)
+        WRITE_BYTE 0x275 1 //Gender (male)
+      END
+    BUT_ONLY
+  END
+END
+
+ACTION_FOR_EACH t-bcre IN ~%tsu%cuchol~ ~dreself1~ ~dreself3~ ~dreself5~ ~dreself7~ ~z_2bibli~ BEGIN
+  ACTION_IF FILE_EXISTS_IN_GAME ~%t-bcre%.cre~ BEGIN //Male Elf Mages
+    COPY_EXISTING ~%t-bcre%.cre~ ~override~
+      PATCH_INCLUDE ~infinityanimations/lib/fj_cre_validity.tpp~
+      PATCH_IF vl BEGIN
+        PATCH_INCLUDE ~infinityanimations/lib/fj_cre_reindex.tpp~
+        WRITE_SHORT 0x28 0x6201 //Animation (mage_male_elf, was cleric)
+        WRITE_BYTE 0x237 1 //Sex (male)
+        WRITE_BYTE 0x272 2 //Race (elf)
+        WRITE_BYTE 0x273 1 //Class (mage)
+        WRITE_BYTE 0x275 1 //Gender (male)
+      END
+    BUT_ONLY
+  END
+END
+
+ACTION_FOR_EACH t-bcre IN ~%tsu%crew4~ ~%tsu%crew7~ BEGIN
+  ACTION_IF FILE_EXISTS_IN_GAME ~%t-bcre%.cre~ BEGIN //Male Human Thieves
+    COPY_EXISTING ~%t-bcre%.cre~ ~override~
+      PATCH_INCLUDE ~infinityanimations/lib/fj_cre_validity.tpp~
+      PATCH_IF vl BEGIN
+        PATCH_INCLUDE ~infinityanimations/lib/fj_cre_reindex.tpp~
+        WRITE_SHORT 0x28 0x6300 //Animation (thief_male_human, was fighter)
+      END
+    BUT_ONLY
+  END
+END
+
+ACTION_IF FILE_EXISTS_IN_GAME ~%tsu%crew2.cre~ BEGIN //Female Human Thief
+  COPY_EXISTING ~%tsu%crew2.cre~ ~override~
+    PATCH_INCLUDE ~infinityanimations/lib/fj_cre_validity.tpp~
+    PATCH_IF vl BEGIN
+      PATCH_INCLUDE ~infinityanimations/lib/fj_cre_reindex.tpp~
+      WRITE_SHORT 0x28 0x6310 //Animation (thief_female_human, was fighter)
+      WRITE_BYTE 0x237 2 //Sex (female, was male)
+      WRITE_BYTE 0x275 2 //Gender (female, was male)
+    END
+  BUT_ONLY
+END
+
+ACTION_FOR_EACH t-bcre IN ~ecolt~ ~monk~ ~monkd2~ ~monkde~ ~monken~ ~monkss13~ ~monkss14~ ~monkss15~ ~monkss16~ ~monkss17~ ~monkss18~ ~ntmonkd2~ ~ntmonkde~ BEGIN
+  ACTION_IF FILE_EXISTS_IN_GAME ~%t-bcre%.cre~ BEGIN //Male Human Monks
+    COPY_EXISTING ~%t-bcre%.cre~ ~override~
+      PATCH_INCLUDE ~infinityanimations/lib/fj_cre_validity.tpp~
+      PATCH_IF vl BEGIN
+        PATCH_INCLUDE ~infinityanimations/lib/fj_cre_reindex.tpp~
+        WRITE_SHORT 0x28 0x6500 //Animation (monk_male_human, was cleric)
+        PATCH_IF BYTE_AT 0x273 = 3 BEGIN //If cleric
+          WRITE_BYTE 0x273 0x14 //Class (monk)
+        END
+      END
+    BUT_ONLY
+  END
+END
+
+ACTION_FOR_EACH t-bcre IN ~cbbdstrt~ ~cbp4acta~ ~cbp4actc~ ~j#pirat3~ ~pirate1~ ~pirate2~ ~pirate3~ ~pirate4~ ~pirebd01~ ~pirebd02~ ~pirebd03~ ~pirebd04~ ~pirebd05~ ~pirebd06~ ~pirebd07~ ~pirebd08~ ~pirebd09~ ~pirebd10~ ~pirebd11~ ~pirebd12~ ~pirebd13~ ~pirebd14~ ~pirebd15~ ~pirsea02~ ~ppguard~ ~ppguarda~ ~ppsail02~ ~ppsail04~ ~ppthf01~ BEGIN
+  ACTION_IF FILE_EXISTS_IN_GAME ~%t-bcre%.cre~ BEGIN //Pirates
+    COPY_EXISTING ~%t-bcre%.cre~ ~override~
+      PATCH_INCLUDE ~infinityanimations/lib/fj_cre_validity.tpp~
+      PATCH_IF vl BEGIN
+        PATCH_INCLUDE ~infinityanimations/lib/fj_cre_reindex.tpp~
+        WRITE_SHORT 0x28 0x7f24 //Animation (pirate)
+        WRITE_BYTE 0x237 1 //Sex (male)
+        PATCH_IF BYTE_AT 0x272 != 7 BEGIN
+          WRITE_BYTE 0x272 1 //Race (human)
+        END
+        PATCH_IF (BYTE_AT 0x273 > 0x14) OR (BYTE_AT 0x273 != 0x9b) BEGIN //If invalid class
+          WRITE_BYTE 0x273 4 //Class (thief)
+        END
+        PATCH_IF BYTE_AT 0x275 != 6 BEGIN //If not summoned
+          WRITE_BYTE 0x275 1 //Gender (male)
+        END
+        PATCH_IF BYTE_AT 0x27b = 0 BEGIN //If no alignment
+          WRITE_BYTE 0x27b 0x32 //Alignment (chaotic_neutral)
+        END
+      END
+    BUT_ONLY
+  END
+END
+
+ACTION_FOR_EACH t-bcre IN ~%tsu%crew1~ ~%tsu%crew5~ ~%tsu%sailjos~ ~ppsailor~ ~xcrew01~ ~xcrew03~ BEGIN
+  ACTION_IF FILE_EXISTS_IN_GAME ~%t-bcre%.cre~ BEGIN //Sailors
+    COPY_EXISTING ~%t-bcre%.cre~ ~override~
+      PATCH_INCLUDE ~infinityanimations/lib/fj_cre_validity.tpp~
+      PATCH_IF vl BEGIN
+        PATCH_INCLUDE ~infinityanimations/lib/fj_cre_reindex.tpp~
+        WRITE_SHORT 0x28 0x7f2a //Animation (sailor_man)
+        WRITE_BYTE 0x237 1 //Sex (male)
+        PATCH_IF BYTE_AT 0x275 != 6 BEGIN //If not summoned
+          WRITE_BYTE 0x275 1 //Gender (male)
+        END
+      END
+    BUT_ONLY
+  END
+END
+
+ACTION_FOR_EACH t-bcre IN ~%tsu%amnis~ ~%tsu%amnis3~ ~%tsu%amnis4~ ~%tsu%amnise~ ~%tsu%amnise2~ ~%tsu%amsleep~ ~bodyg1~ ~c#ajwac1~ ~c#ajwac2~ ~c#q03012~ ~c#q03013~ ~c#q03014~ ~c#q04005~ ~c#q04006~ ~%tsu%dead2~ ~%tsd%eadfuck~ ~docsol01~ ~hactong~ ~%tsu%hick~ ~gguard01~ ~guamur~ ~slcent~ ~vvamn1~ ~vvamn2~ ~vvamn3~ BEGIN
+  ACTION_IF FILE_EXISTS_IN_GAME ~%t-bcre%.cre~ BEGIN //Amnish Soldiers
+    COPY_EXISTING ~%t-bcre%.cre~ ~override~
+      PATCH_INCLUDE ~infinityanimations/lib/fj_cre_validity.tpp~
+      PATCH_IF vl BEGIN
+        PATCH_INCLUDE ~infinityanimations/lib/fj_cre_reindex.tpp~
+        WRITE_SHORT 0x28 0x7f2c //Animation (amnish_soldier, was cleric)
+        WRITE_BYTE 0x237 1 //Sex (male)
+        PATCH_IF (BYTE_AT 0x273 = 4) OR (BYTE_AT 0x273 > 200) BEGIN //If invalid class
+          WRITE_BYTE 0x273 2 //Class (fighter)
+        END
+        WRITE_BYTE 0x275 1 //Gender (male)
+        PATCH_IF BYTE_AT 0x27b = 0 BEGIN //If no alignment
+          WRITE_BYTE 0x27b 0x12 //Alignment (lawful_neutral)
+        END
+      END
+    BUT_ONLY
+  END
+END
+
+ACTION_FOR_EACH t-bcre IN ~aj#sth~ ~ambsthf0~ ~ambthif2~ ~arnfgt01~ ~arnfgt02~ ~arnman09~ ~arntra05~ ~arntra06~ ~arnwar03~ ~arnwar04~ ~bpsthef3~ ~bpthief2~ ~c6mess~ ~cbshdrun~ ~cushad2~ ~cushad3~ ~cushad5~ ~dassin~ ~dockhlp1~ ~dockhlp2~ ~dsthief~ ~flyfgt01~ ~lk#nithf~ ~mfeind1~ ~mookft01~ ~ppshad01~ ~repthf1~ ~shadcr1~ ~shadth01~ ~stass1~ ~stolethf~ ~thief2~ ~vvcat~ ~vvdead1~ ~vvdead2~ ~vvshad1~ ~vvshad11~ ~vvshad12~ ~vvshad4~ ~vvshad5~ ~vvshad6~ ~vvshad8~ ~z#arch1~ ~z#arch2~ ~z#archbv~ ~zprize2~ ~zprize3~ BEGIN
+  ACTION_IF FILE_EXISTS_IN_GAME ~%t-bcre%.cre~ BEGIN //Shadow Thieves
+    COPY_EXISTING ~%t-bcre%.cre~ ~override~
+      PATCH_INCLUDE ~infinityanimations/lib/fj_cre_validity.tpp~
+      PATCH_IF vl BEGIN
+        PATCH_INCLUDE ~infinityanimations/lib/fj_cre_reindex.tpp~
+        WRITE_SHORT 0x28 0x7f36 //Animation (shadow_thief)
+        WRITE_BYTE 0x237 1 //Sex (male)
+        WRITE_BYTE 0x275 1 //Gender (male)
+      END
+    BUT_ONLY
+  END
+END
+VERBOSE
+
+//! Distinctive Genies //////////////////////////////////////////////////////
+BEGIN @25 //Distinctive Genies
+DESIGNATED 50
+REQUIRE_COMPONENT ~setup-infinityanimations.tp2~ 0 @26 //This component requires the main component.
+
+ACTION_IF NOT MOD_IS_INSTALLED ~setup-infinityanimations.tp2~ 0 BEGIN
+  FAIL @26 //This component requires the main component.
+END
+
+SILENT
+ACTION_FOR_EACH nb IN ~ddguard5~ ~gendao01~ ~genie1~ ~genietrv~ ~trgeni02~ ~trgeni03~ BEGIN
+  ACTION_IF FILE_EXISTS_IN_GAME ~%nb%.cre~ BEGIN //Dao
+    COPY_EXISTING ~%nb%.cre~ ~override~
+      PATCH_INCLUDE ~infinityanimations/lib/fj_cre_validity.tpp~
+      PATCH_IF vl BEGIN
+        PATCH_INCLUDE ~infinityanimations/lib/fj_cre_reindex.tpp~
+        WRITE_SHORT 0x28 0x5fbc //Animation (dao)
+        WRITE_BYTE 0x2d 107 //Minor color (khaki)
+        WRITE_BYTE 0x2e 39 //Major color (dark dirt brown)
+        WRITE_BYTE 0x2f 39 //Skin color
+        WRITE_BYTE 0x275 1 //Gender (male)
+      END
+    BUT_ONLY
+  END
+END
+
+ACTION_FOR_EACH nb IN ~genie02~ ~kgenie1~ ~kgenie2~ ~trgeni01~ BEGIN
+  ACTION_IF FILE_EXISTS_IN_GAME ~%nb%.cre~ BEGIN //Dao with Legs
+    COPY_EXISTING ~%nb%.cre~ ~override~
+      PATCH_INCLUDE ~infinityanimations/lib/fj_cre_validity.tpp~
+      PATCH_IF vl BEGIN
+        PATCH_INCLUDE ~infinityanimations/lib/fj_cre_reindex.tpp~
+        WRITE_SHORT 0x28 0x5fbd //Animation (dao_legs)
+        WRITE_BYTE 0x2d 107 //Minor color (khaki)
+        WRITE_BYTE 0x2e 39 //Major color (dark dirt brown)
+        WRITE_BYTE 0x2f 39 //Skin color
+        WRITE_BYTE 0x275 1 //male
+      END
+    BUT_ONLY
+  END
+END
+
+ACTION_FOR_EACH nb IN ~aataqah~ ~caligen3~ ~dagenie~ ~ddguard2~ ~ddguard3~ ~drgenie~ ~dw#wish1~ ~dw#wish2~ ~dw#wish3~ ~dw#wish4~ ~e3invis~ ~fwsw1h12~ ~gendji01~ ~gendjn01~ ~genie03~ ~idjinni~ ~nshdbud~ ~pladjin~ ~ppdjinn~ ~ppdjinn2~ ~sumdjinn~ ~u!kgen~ ~wish01~ ~wish02~ ~djinnisu~ ~entdjin~ ~entdjin3~ BEGIN
+  ACTION_IF FILE_EXISTS_IN_GAME ~%nb%.cre~ BEGIN //Djinni
+    COPY_EXISTING ~%nb%.cre~ ~override~
+      PATCH_INCLUDE ~infinityanimations/lib/fj_cre_validity.tpp~
+      PATCH_IF vl BEGIN
+        PATCH_INCLUDE ~infinityanimations/lib/fj_cre_reindex.tpp~
+        WRITE_BYTE 0x237 1 //Sex (male)
+        READ_BYTE 0x273 cs //Class
+        PATCH_IF cs = 194 BEGIN //If dao
+          WRITE_BYTE 0x273 193 //Class (genie_djinni)
+        END
+        READ_BYTE 0x275 gd //Gender
+        PATCH_IF gd != 6 BEGIN //If not summoned
+          WRITE_BYTE 0x275 1 //male
+        END
+      END
+    BUT_ONLY
+  END
+END
+
+ACTION_FOR_EACH nb IN ~ddguard6~ ~genogeni~ ~hellgen~ ~sumefree~ BEGIN
+  ACTION_IF FILE_EXISTS_IN_GAME ~%nb%.cre~ BEGIN //Efreet
+    COPY_EXISTING ~%nb%.cre~ ~override~
+      PATCH_INCLUDE ~infinityanimations/lib/fj_cre_validity.tpp~
+      PATCH_IF vl BEGIN
+        PATCH_INCLUDE ~infinityanimations/lib/fj_cre_reindex.tpp~
+        WRITE_SHORT 0x28 0x5fbe //Animation (efreeti)
+        WRITE_BYTE 0x2d 49 //Minor color (dark bronze)
+        WRITE_BYTE 0x2e 46 //Major color (dark red)
+        WRITE_BYTE 0x2f 46 //Skin color
+        WRITE_BYTE 0x237 1 //Sex (male)
+        READ_BYTE 0x275 gd //Gender
+        PATCH_IF gd != 6 BEGIN //If not summoned
+          WRITE_BYTE 0x275 1 //male
+        END
+        READ_BYTE 0x273 cs //Class
+        PATCH_IF (cs != 197) AND (cs != 7) BEGIN //If not noble_efreeti or fighter_mage
+          WRITE_BYTE 0x273 195 //efreeti
+        END
+      END
+    BUT_ONLY
+  END
+END
+
+ACTION_FOR_EACH nb IN ~caligen1~ ~caligen2~ ~djincre~ ~efreetsu~ ~genefn01~ ~genefr01~ ~obsfir01~ ~salam01~ ~salam02~ ~salam03~ ~salam04~ ~salam05~ ~salam06~ ~uleffy~ BEGIN
+  ACTION_IF FILE_EXISTS_IN_GAME ~%nb%.cre~ BEGIN //Efreet with Legs
+    COPY_EXISTING ~%nb%.cre~ ~override~
+      PATCH_INCLUDE ~infinityanimations/lib/fj_cre_validity.tpp~
+      PATCH_IF vl BEGIN
+        PATCH_INCLUDE ~infinityanimations/lib/fj_cre_reindex.tpp~
+        WRITE_SHORT 0x28 0x5fbf //Animation (efreeti_legs)
+        WRITE_BYTE 0x2d 49 //Minor color (dark bronze)
+        WRITE_BYTE 0x2e 46 //Major color (dark red)
+        WRITE_BYTE 0x2f 46 //Skin color
+        WRITE_BYTE 0x237 1 //Sex (male)
+        READ_BYTE 0x275 gd //Gender
+        PATCH_IF gd != 6 BEGIN //If not summoned
+          WRITE_BYTE 0x275 1 //male
+        END
+        READ_BYTE 0x273 cs //Class
+        PATCH_IF (cs != 197) AND (cs != 7) BEGIN //If not noble_efreeti or fighter_mage
+          WRITE_BYTE 0x273 195 //efreeti
+        END
+      END
+    BUT_ONLY
+  END
+END
+
+ACTION_FOR_EACH nb IN ~ddguard1~ ~genie01~ BEGIN
+  ACTION_IF FILE_EXISTS_IN_GAME ~%nb%.cre~ BEGIN //Janni
+    COPY_EXISTING ~%nb%.cre~ ~override~
+      PATCH_INCLUDE ~infinityanimations/lib/fj_cre_validity.tpp~
+      PATCH_IF vl BEGIN
+        PATCH_INCLUDE ~infinityanimations/lib/fj_cre_reindex.tpp~
+        WRITE_SHORT 0x28 0x5fc0 //Animation (janni)
+        WRITE_BYTE 0x2d 48 //Minor color (light bronze)
+        WRITE_BYTE 0x2e 58 //Major color (dark blue)
+        WRITE_BYTE 0x2f 36 //Skin color (light dirty yellow)
+        WRITE_BYTE 0x275 1 //male
+      END
+    BUT_ONLY
+  END
+END
+
+ACTION_IF FILE_EXISTS_IN_GAME ~gencali1.cre~ BEGIN //Jann with Legs
+  COPY_EXISTING ~gencali1.cre~ ~override~
+    PATCH_IF SOURCE_SIZE > 0x2d3 BEGIN
+      WRITE_SHORT 0x28 0x5fc1 //Animation (janni_legs)
+      WRITE_BYTE 0x2d 48 //Minor color (light bronze)
+      WRITE_BYTE 0x2e 58 //Major color (dark blue)
+      WRITE_BYTE 0x2f 36 //Skin color (light dirty yellow)
+      WRITE_BYTE 0x275 1 //male
+    END
+  BUT_ONLY
+END
+
+ACTION_FOR_EACH nb IN ~ddguard4~ ~genie04~ BEGIN
+  ACTION_IF FILE_EXISTS_IN_GAME ~%nb%.cre~ BEGIN //Marids
+    COPY_EXISTING ~%nb%.cre~ ~override~
+      PATCH_INCLUDE ~infinityanimations/lib/fj_cre_validity.tpp~
+      PATCH_IF vl BEGIN
+        PATCH_INCLUDE ~infinityanimations/lib/fj_cre_reindex.tpp~
+        WRITE_SHORT 0x28 0x5fc2 //Animation (marid)
+        WRITE_BYTE 0x2d 52 //Minor color (light green)
+        WRITE_BYTE 0x2e 96 //Major color (chrome blue)
+        WRITE_BYTE 0x2f 32 //Skin color (dark sea green)
+        WRITE_BYTE 0x275 1 //male
+      END
+    BUT_ONLY
+  END
+END
+
+ACTION_IF FILE_EXISTS_IN_GAME ~gencali2.cre~ BEGIN //Marid with Legs
+  COPY_EXISTING ~gencali2.cre~ ~override~
+    PATCH_IF SOURCE_SIZE > 0x2d3 BEGIN
+      WRITE_SHORT 0x28 0x5fc3 //Animation (marid_legs)
+      WRITE_BYTE 0x2d 52 //Minor color (light green)
+      WRITE_BYTE 0x2e 96 //Major color (chrome blue)
+      WRITE_BYTE 0x2f 32 //Skin color (dark sea green)
+      WRITE_BYTE 0x275 1 //male
+    END
+  BUT_ONLY
+END
+VERBOSE
+
+//! Distinctive Fiends //////////////////////////////////////////////////////
+BEGIN @28 //Distinctive Fiends
+DESIGNATED 100
+REQUIRE_COMPONENT ~setup-infinityanimations.tp2~ 0 @26 //This component requires the main component.
+
+ACTION_IF NOT MOD_IS_INSTALLED ~setup-infinityanimations.tp2~ 0 BEGIN
+  FAIL @26 //This component requires the main component.
+END
+
+SILENT
+OUTER_SPRINT abi ~demabi01~
+OUTER_SPRINT nab ~t-none~
+ACTION_IF FILE_EXISTS_IN_GAME ~dw#nabsu.cre~ BEGIN //SCS2 overwrites an abishai with a nabassu
+  COPY_EXISTING ~demabi01.cre~ ~override~
+    PATCH_IF SOURCE_SIZE > 0x2d3 BEGIN
+      PATCH_IF BYTE_AT 0x27b = 0x33 BEGIN //If chaotic evil
+        SPRINT abi ~t-none~
+        SPRINT nab ~demabi01~
+      END
+    END
+  BUT_ONLY
+END
+
+ACTION_FOR_EACH nb IN ~abydem01~ ~barbe2~ ~barbe3~ ~caddem13~ ~caddem5~ ~%nab%~ ~demnab01~ ~demnab02~ ~demnabr1~ ~demnabr2~ ~demnabsu~ ~dw#nabsu~ ~enddem04~ ~enddem05~ ~esp04~ ~f_demdrg~ ~finnabas~ ~obsdem01~ ~obsdem05~ ~pmaster~ ~ppnab01~ ~ppnab02~ ~ppnab03~ ~rumar02~ ~%tsu%tanar~ ~tanari01~ ~tg#dem2~ ~udnaba~ ~z#gnab01~ ~z#gnabas~ BEGIN
+  ACTION_IF FILE_EXISTS_IN_GAME ~%nb%.cre~ BEGIN //Nabassus get a green-gray tanar'ri animation
+    COPY_EXISTING ~%nb%.cre~ ~override~
+      PATCH_INCLUDE ~infinityanimations/lib/fj_cre_validity.tpp~
+      PATCH_IF vl BEGIN
+        PATCH_INCLUDE ~infinityanimations/lib/fj_cre_reindex.tpp~
+        WRITE_SHORT 0x28 0x1001 //Animation (nabassu)
+        WRITE_BYTE 0x2d 36 //Minor color (light dirty yellow)
+        WRITE_BYTE 0x2e 20 //Major color (dark moldy green)
+        WRITE_BYTE 0x2f 20 //Skin color
+        PATCH_IF BYTE_AT 0x234 < 13 BEGIN
+          WRITE_BYTE 0x234 13 //Level 1
+        END
+        WRITE_BYTE 0x237 1 //Sex (male)
+        WRITE_BYTE 0x271 255 //General (monster)
+        WRITE_BYTE 0x272 121 //Race (fiend)
+        WRITE_BYTE 0x273 160 //Class (tanar'ri)
+        READ_BYTE 0x275 gd //Gender
+        PATCH_IF (gd != 6) AND (gd != 9) BEGIN //If not summoned
+          WRITE_BYTE 0x275 1 //male
+        END
+        WRITE_BYTE 0x27b 51 //Alignment (chaotic evil by definition)
+        LAUNCH_PATCH_FUNCTION DELETE_CRE_EFFECT
+          INT_VAR opcode_to_delete = 51 //Strong-dark by RGB
+        END
+        SAY INITIAL_MEETING @506 //Who disturbs me? [T-NAB04]
+        SAY MORALE @507 //Rawrr! [T-NAB03]
+        SAY UNHAPPY_BREAKING_POINT @507 //Rawrr! [T-NAB03]
+        SAY BATTLE_CRY1 @508 //I will rend your soul! [T-NAB05]
+        SAY BATTLE_CRY2 @509 //Your pain shall be eternal! [T-NAB06]
+        WRITE_LONG BATTLE_CRY3 (0 - 1)
+        WRITE_LONG BATTLE_CRY4 (0 - 1)
+        WRITE_LONG BATTLE_CRY5 (0 - 1)
+        WRITE_LONG ATTACK1 (0 - 1)
+        WRITE_LONG ATTACK2 (0 - 1)
+        WRITE_LONG DAMAGE (0 - 1)
+        WRITE_LONG DYING (0 - 1)
+        SAY SELECT_COMMON1 @507 //Rawrr! [T-NAB03]
+        SAY SELECT_COMMON2 @506 //Who disturbs me? [T-NAB04]
+        WRITE_LONG SELECT_COMMON3 (0 - 1)
+      END
+    BUT_ONLY
+  END
+END
+
+COPY_EXISTING ~gorchr.cre~ ~override~ //Chromatic Demon (makes him somewhat chromatic)
+  PATCH_INCLUDE ~infinityanimations/lib/fj_cre_validity.tpp~
+  PATCH_IF vl BEGIN
+    PATCH_INCLUDE ~infinityanimations/lib/fj_cre_reindex.tpp~
+    WRITE_SHORT 0x28 0x1002 //Animation (demon_blue)
+    WRITE_BYTE 0x2d 50 //Minor color (yellow)
+    WRITE_BYTE 0x2e 58 //Major color (dark blue)
+    WRITE_BYTE 0x2f 58 //Skin color
+    WRITE_BYTE 0x275 1 //Gender (male)
+    WRITE_BYTE 0x273 160 //Class (tanar'ri)
+  END
+BUT_ONLY
+
+ACTION_FOR_EACH nb IN ~abaia~ ~abaia2~ ~f_demspi~ BEGIN
+  ACTION_IF FILE_EXISTS_IN_GAME ~%nb%.cre~ BEGIN //Bebiliths
+    COPY_EXISTING ~%nb%.cre~ ~override~
+      PATCH_INCLUDE ~infinityanimations/lib/fj_cre_validity.tpp~
+      PATCH_IF vl BEGIN
+        PATCH_INCLUDE ~infinityanimations/lib/fj_cre_reindex.tpp~
+        WRITE_SHORT 0x28 0x5032 //Animation (bebilith_nwn)
+        READ_BYTE 0x237 sx //Sex
+        PATCH_IF sx > 4 BEGIN //If invalid
+          WRITE_BYTE 0x237 2 //female
+        END
+        WRITE_BYTE 0x271 255 //General (monster)
+      END
+    BUT_ONLY
+  END
+END
+
+ACTION_FOR_EACH nb IN ~cbgrbone~ ~dbonef01~ ~dw#vibon~ ~gorbat5~ ~melsum02~ BEGIN
+  ACTION_IF FILE_EXISTS_IN_GAME ~%nb%.cre~ BEGIN //Bone Fiends
+    COPY_EXISTING ~%nb%.cre~ ~override~
+      PATCH_INCLUDE ~infinityanimations/lib/fj_cre_validity.tpp~
+      PATCH_IF vl BEGIN
+        PATCH_INCLUDE ~infinityanimations/lib/fj_cre_reindex.tpp~
+        WRITE_SHORT 0x28 0x5271 //Animation (osyluth_nwn)
+        WRITE_BYTE 0x2d 83 //Minor color (dark bluish gray)
+        WRITE_BYTE 0x2e 28 //Major color (bluish silver)
+        WRITE_BYTE 0x2f 28 //Skin color
+        WRITE_BYTE 0x272 121 //Race (fiend)
+        WRITE_BYTE 0x273 179 //Class (devil)
+        WRITE_BYTE 0x275 4 //Gender (neither)
+        LAUNCH_PATCH_FUNCTION DELETE_CRE_EFFECT
+          INT_VAR opcode_to_delete = 51 //Strong-dark by RGB
+        END
+      END
+    BUT_ONLY
+  END
+END
+
+ACTION_FOR_EACH nb IN ~demgelsu~ ~gelugeon~ ~gelugon1~ ~gordem2~ ~rr#hgel~ ~rr#sgelu~ BEGIN
+  ACTION_IF FILE_EXISTS_IN_GAME ~%nb%.cre~ BEGIN //Gelugons
+    COPY_EXISTING ~%nb%.cre~ ~override~
+      PATCH_INCLUDE ~infinityanimations/lib/t-cre_fixer.tpp~ //These CREs need fixing because of hosed slots
+      WRITE_SHORT 0x28 0xe910 //Animation (salamander2)
+      WRITE_BYTE 0x2f 57 //Skin color (light blue)
+      WRITE_BYTE 0x237 1 //Sex (male)
+      WRITE_BYTE 0x271 255 //General (monster)
+      READ_BYTE 0x275 gd //Gender
+      PATCH_IF (gd != 6) AND (gd != 9) BEGIN //If not summoned
+        WRITE_BYTE 0x275 1 //male
+      END
+      SAY BATTLE_CRY1 ~~ [T-GEL01A]
+      SAY BATTLE_CRY2 ~~ [T-GEL01B]
+      SAY BATTLE_CRY3 ~~ [T-GEL01C]
+      SAY ATTACK1 ~~ [T-GEL03]
+      SAY DAMAGE ~~ [T-GEL07]
+      SAY DYING ~~ [T-GEL09]
+      SAY SELECT_COMMON1 ~~ [T-GEL02A]
+      SAY SELECT_COMMON2 ~~ [T-GEL02B]
+      SAY SELECT_COMMON3 ~~ [T-GEL02C]
+    BUT_ONLY
+  END
+END
+
+ACTION_FOR_EACH nb IN ~garmari1~ ~garmari2~ ~godmari1~ ~psmari1~ ~psmari2~ ~psmarile~ ~z_2spe2~ BEGIN
+  ACTION_IF FILE_EXISTS_IN_GAME ~%nb%.cre~ BEGIN //Some mariliths get the dark marilith animation
+    COPY_EXISTING ~%nb%.cre~ ~override~
+      PATCH_IF SOURCE_SIZE > 0x2d3 BEGIN
+        WRITE_SHORT 0x28 0x5052 //Animation (marilith_dark)
+        WRITE_BYTE 0x2d 56 //Minor color (dark turquoise)
+        WRITE_BYTE 0x2e 63 //Major color (dark gray)
+        WRITE_BYTE 0x2f 63 //Skin color
+        WRITE_BYTE 0x237 2 //Sex (female)
+        WRITE_BYTE 0x271 255 //General (monster)
+        WRITE_BYTE 0x275 2 //Gender (female)
+        SAY MORALE #61765 //No! Nooo! I must be away! [UNEARF08]
+        SAY UNHAPPY_BREAKING_POINT #61765
+        SAY BATTLE_CRY1 #61761 //I shall enjoy gutting you like the dog you are... [UNEARF04]
+        SAY BATTLE_CRY2 #61760 //Death will only be the beginning for you... [UNEARF03]
+        SAY BATTLE_CRY3 #61762 //Now the time has come for you to pay... [UNEARF05]
+        SAY SELECT_COMMON1 #61758 //Your death lies here, fool! [UNEARF01]
+        SAY SELECT_COMMON2 #61759 //This is your end, I assure you. [UNEARF02]
+      END
+    BUT_ONLY
+  END
+END
+
+ACTION_FOR_EACH nb IN ~nighthag~ ~pshag~ BEGIN
+  ACTION_IF FILE_EXISTS_IN_GAME ~%nb%.cre~ BEGIN //Night Hags
+    COPY_EXISTING ~%nb%.cre~ ~override~
+      PATCH_INCLUDE ~infinityanimations/lib/fj_cre_validity.tpp~
+      PATCH_IF vl BEGIN
+        PATCH_INCLUDE ~infinityanimations/lib/fj_cre_reindex.tpp~
+        WRITE_SHORT 0x28 0x5b0a //Animation (night_hag)
+        WRITE_BYTE 0x2d 43 //Minor color (dark beige)
+        WRITE_BYTE 0x2e 65 //Major color (really dark gray)
+        WRITE_BYTE 0x2f 18 //Skin color (dark blue)
+        WRITE_BYTE 0x32 64 //Hair color (dark gray)
+        WRITE_BYTE 0x237 2 //Sex (female)
+        WRITE_BYTE 0x271 255 //General (monster)
+        WRITE_BYTE 0x275 2 //Gender (female)
+        WRITE_BYTE 0x272 121 //Race (fiend)
+        WRITE_BYTE 0x27b 35 //Alignment (neutral evil by definition)
+        SAY INITIAL_MEETING @510 //Well... hello, my pretty! [T-HAG01]
+        SAY MORALE ~~ [T-HAG66B]
+        SAY UNHAPPY_BREAKING_POINT ~~ [T-HAG66B]
+        WRITE_LONG LEADER (0 - 1)
+        WRITE_LONG TIRED (0 - 1)
+        WRITE_LONG BORED (0 - 1)
+        SAY BATTLE_CRY1 @511 //Your bones and blood will blanket my garden. [T-HAG77]
+        SAY BATTLE_CRY2 ~~ [T-HAG66C]
+        WRITE_LONG BATTLE_CRY3 (0 - 1)
+        SAY ATTACK1 ~~ [T-HAG06A]
+        SAY DAMAGE ~~ [T-HAG66A]
+        SAY DYING @512 //Off with ye. Dead I am. [T-HAG90A]
+        WRITE_LONG HURT (0 - 1)
+        SAY SELECT_COMMON1 @513 //Do not push me! [T-HAG13]
+        SAY SELECT_COMMON2 ~~ [T-HAG06B]
+        WRITE_LONG SELECT_COMMON3 (0 - 1)
+        WRITE_LONG SELECT_ACTION1 (0 - 1)
+        WRITE_LONG SELECT_ACTION2 (0 - 1)
+        WRITE_LONG SELECT_ACTION3 (0 - 1)
+        WRITE_LONG SELECT_RARE1 (0 - 1)
+        WRITE_LONG SELECT_RARE2 (0 - 1)
+        WRITE_LONG CRITICAL_HIT (0 - 1)
+        WRITE_LONG CRITICAL_MISS (0 - 1)
+        WRITE_LONG TARGET_IMMUNE (0 - 1)
+        WRITE_LONG INVENTORY_FULL (0 - 1)
+        WRITE_LONG PICKED_POCKET (0 - 1)
+        WRITE_LONG HIDDEN_IN_SHADOWS (0 - 1)
+        SAY SPELL_DISRUPTED ~~ [T-HAG66B]
+        WRITE_LONG SET_A_TRAP (0 - 1)
+        WRITE_LONG EXISTANCE5 (0 - 1)
+      END
+    BUT_ONLY
+  END
+END
+
+ACTION_FOR_EACH nb IN ~i#vyoch~ ~yachol~ ~yochlo01~ ~ysdemon~ BEGIN
+//Assigns yochlols a darkened otyugh animation (except those in drow form)
+  ACTION_IF FILE_EXISTS_IN_GAME ~%nb%.cre~ BEGIN //Yochlols
+    COPY_EXISTING ~%nb%.cre~ ~override~
+      PATCH_INCLUDE ~infinityanimations/lib/fj_cre_validity.tpp~
+      PATCH_IF vl BEGIN
+        PATCH_INCLUDE ~infinityanimations/lib/fj_cre_reindex.tpp~
+        WRITE_SHORT 0x28 0x5fdd //Animation (yochlol)
+        WRITE_BYTE 0x2d 60 //Minor color (dark purple)
+        WRITE_BYTE 0x2e 41 //Major color (dark brown)
+        WRITE_BYTE 0x2f 41 //Skin color
+        WRITE_BYTE 0x237 2 //Sex (female)
+        WRITE_BYTE 0x271 255 //General (monster)
+        READ_BYTE 0x275 gd //Gender
+        PATCH_IF (gd != 6) AND (gd != 9) BEGIN //If not summoned
+          WRITE_BYTE 0x275 2 //female
+        END
+        WRITE_BYTE 0x272 121 //Race (fiend)
+        WRITE_BYTE 0x273 160 //Class (tanar'ri)
+      END
+    BUT_ONLY
+  END
+END
+
+ACTION_FOR_EACH nb IN ~wardabi1~ ~wardabi2~ BEGIN
+  ACTION_IF FILE_EXISTS_IN_GAME ~%nb%.cre~ BEGIN //Silver Abishai
+    COPY_EXISTING ~%nb%.cre~ ~override~
+      PATCH_IF SOURCE_SIZE > 0x2d3 BEGIN
+        WRITE_SHORT 0x28 0x5249 //Animation (abishai_white)
+        WRITE_BYTE 0x2d 79 //Minor color (light silver)
+        WRITE_BYTE 0x2e 105 //Major color (off white)
+        WRITE_BYTE 0x2f 105 //Skin color
+        SAY BATTLE_CRY1 ~~ [T-ABI01A]
+        SAY BATTLE_CRY2 ~~ [T-ABI02A]
+        SAY BATTLE_CRY3 ~~ [T-ABI08A]
+        SAY ATTACK1 ~~ [T-ABI03A]
+        SAY DAMAGE ~~ [T-ABI07A]
+        SAY DYING ~~ [T-ABI09A]
+        SAY SELECT_COMMON1 ~~ [T-ABI01A]
+        SAY SELECT_COMMON2 ~~ [T-ABI02A]
+        SAY SELECT_COMMON3 ~~ [T-ABI04A]
+        SAY SPELL_DISRUPTED ~~ [T-ABI10A]
+      END
+    BUT_ONLY
+  END
+END
+
+COPY_EXISTING ~mane.cre~ ~override~ //Manes
+              ~obsdem02.cre~ ~override~
+  PATCH_IF SOURCE_SIZE > 0x2d3 BEGIN
+    WRITE_SHORT 0x28 0x5286 //Animation (drowned_dead)
+    WRITE_BYTE 0x272 121 //Race (fiend)
+    WRITE_BYTE 0x273 160 //Class (tanar'ri)
+  END
+BUT_ONLY
+
+ACTION_FOR_EACH nb IN ~babi~ ~duegabis~ ~grenabi1~ ~remorhaz~ BEGIN
+  ACTION_IF FILE_EXISTS_IN_GAME ~%nb%.cre~ BEGIN //Green Abishai
+    COPY_EXISTING ~%nb%.cre~ ~override~
+      PATCH_IF SOURCE_SIZE > 0x2d3 BEGIN
+        WRITE_SHORT 0x28 0x5b05 //Animation (abishai_green)
+        WRITE_BYTE 0x2d 51 //Minor color (dark olive)
+        WRITE_BYTE 0x2e 54 //Major color (dark green)
+        WRITE_BYTE 0x2f 54 //Skin color
+        SAY BATTLE_CRY1 ~~ [T-ABI01]
+        SAY BATTLE_CRY2 ~~ [T-ABI02]
+        SAY ATTACK1 ~~ [T-ABI03]
+        SAY DAMAGE ~~ [T-ABI06]
+        SAY DYING ~~ [T-ABI05]
+        SAY SELECT_COMMON1 ~~ [T-ABI01]
+        SAY SELECT_COMMON2 ~~ [T-ABI02]
+        SAY SPELL_DISRUPTED ~~ [T-ABI04]
+        LAUNCH_PATCH_FUNCTION DELETE_CRE_EFFECT
+          INT_VAR opcode_to_delete = 51 //Strong-dark by RGB
+        END
+      END
+    BUT_ONLY
+  END
+END
+
+ACTION_FOR_EACH nb IN ~abishai1~ ~abisred1~ ~%abi%~ ~godabis1~ ~godabis2~ ~nsabish~ ~psbaat02~ ~psbaat2a~ ~rabi~ ~redabi01~ ~remorle~ BEGIN
+  ACTION_IF FILE_EXISTS_IN_GAME ~%nb%.cre~ BEGIN //Red Abishai
+    COPY_EXISTING ~%nb%.cre~ ~override~
+      PATCH_IF SOURCE_SIZE > 0x2d3 BEGIN
+        WRITE_SHORT 0x28 0x5b06 //Animation (abishai_red)
+        WRITE_BYTE 0x2d 51 //Minor color (dark olive)
+        WRITE_BYTE 0x2e 46 //Major color (dark red)
+        WRITE_BYTE 0x2f 46 //Skin color
+        SAY BATTLE_CRY1 ~~ [T-ABI01]
+        SAY BATTLE_CRY2 ~~ [T-ABI02]
+        SAY ATTACK1 ~~ [T-ABI04]
+        SAY DAMAGE ~~ [T-ABI07]
+        SAY DYING ~~ [T-ABI08]
+        SAY SELECT_COMMON1 ~~ [T-ABI01]
+        SAY SELECT_COMMON2 ~~ [T-ABI02]
+        SAY SPELL_DISRUPTED ~~ [T-ABI03]
+        LAUNCH_PATCH_FUNCTION DELETE_CRE_EFFECT
+          INT_VAR opcode_to_delete = 51 //Strong-dark by RGB
+        END
+      END
+    BUT_ONLY
+  END
+END
+
+ACTION_IF NOT FILE_EXISTS_IN_GAME ~wings01.itm~ BEGIN
+  COPY ~infinityanimations/wings~ ~override~
+
+  COPY ~infinityanimations/items/wings01.itm~ ~override~
+    SAY NAME1 @514 //Wings
+    SAY NAME2 @514 //Wings
+    SAY UNIDENTIFIED_DESC @515 //These soft and feathered wings seem to be fashioned in a celestial design.
+    SAY DESC @515 //These soft and feathered wings seem to be fashioned in a celestial design.
+END
+
+ACTION_FOR_EACH nb IN ~deriny01~ ~gorbat2~ ~gorwom02~ ~jumjum~ ~psbaat03~ BEGIN
+  ACTION_IF FILE_EXISTS_IN_GAME ~%nb%.cre~ BEGIN //Erinyes
+    COPY_EXISTING ~%nb%.cre~ ~override~
+      PATCH_INCLUDE ~infinityanimations/lib/fj_cre_validity.tpp~
+      PATCH_IF vl BEGIN
+        PATCH_INCLUDE ~infinityanimations/lib/fj_cre_reindex.tpp~
+        WRITE_SHORT 0x28 0x6111 //Animation (fighter_female_elf)
+        WRITE_BYTE 0x2f 113 //Skin color (fog)
+        WRITE_BYTE 0x32 0 //Hair color (red-tinted black)
+        REPLACE_CRE_ITEM ~wings01~ #0 #0 #0 ~UNDROPPABLE~ ~HELMET~
+        WRITE_BYTE 0x237 2 //Sex (female)
+        WRITE_BYTE 0x275 2 //Gender (female)
+        WRITE_BYTE 0x272 121 //Race (fiend)
+        READ_BYTE 0x273 cs //Class
+        PATCH_IF cs > 20 BEGIN
+          WRITE_BYTE 0x273 179 //devil
+        END
+        WRITE_BYTE 0x27b 19 //Alignment (lawful evil by definition)
+        PATCH_IF SLONG_AT INITIAL_MEETING < 1 BEGIN
+          SAY INITIAL_MEETING @516 //Well hello there. [T-ERI02A]
+        END
+        PATCH_IF SLONG_AT MORALE < 1 BEGIN
+          SAY MORALE @517 //Farewell for now. [T-ERI06]
+        END
+        PATCH_IF SLONG_AT UNHAPPY_BREAKING_POINT < 1 BEGIN
+          SAY UNHAPPY_BREAKING_POINT @517 //Farewell for now. [T-ERI06]
+        END
+        PATCH_IF SLONG_AT BATTLE_CRY1 < 1 BEGIN
+          SAY BATTLE_CRY1 @518 //On your knees! [T-ERI01A]
+          SAY BATTLE_CRY2 @519 //You are mine! [T-ERI01B]
+          SAY BATTLE_CRY3 @520 //Rrrauugh! [T-ERI01C]
+          SAY BATTLE_CRY4 @521 //You tempt pain that you have never dreamed of. [T-ERI01D]
+          SAY BATTLE_CRY5 @522 //Rend their flesh! They will not need it. [T-ERI01E]
+        END
+        PATCH_IF SLONG_AT ATTACK1 < 1 BEGIN
+          SAY ATTACK1 ~~ [T-ERI03]
+        END
+        PATCH_IF SLONG_AT DAMAGE < 1 BEGIN
+          SAY DAMAGE ~~ [T-ERI07]
+        END
+        PATCH_IF SLONG_AT DYING < 1 BEGIN
+          SAY DYING ~~ [T-ERI09]
+        END
+        PATCH_IF SLONG_AT HURT < 1 BEGIN
+          SAY HURT ~You want to heal me. You must.~ [T-ERI10]
+        END
+        PATCH_IF SLONG_AT SELECT_COMMON1 < 1 BEGIN
+          SAY SELECT_COMMON1 @516 //Well hello there. [T-ERI02A]
+          SAY SELECT_COMMON2 @524 //I need to speak with you. Come here. [T-ERI02B]
+          SAY SELECT_COMMON3 @525 //Come to my side. Help me here. [T-ERI02C]
+          SAY SELECT_COMMON4 @526 //Oh, yes. [T-ERI02D]
+          SAY SELECT_COMMON5 @527 //Ha! Ha-ha-ha... [T-ERI02E]
+        END
+        PATCH_IF SLONG_AT CRITICAL_HIT < 1 BEGIN
+          SAY CRITICAL_HIT @528 //Oh, that is very nice. [T-ERI05]
+        END
+        PATCH_IF SLONG_AT CRITICAL_MISS < 1 BEGIN
+          SAY CRITICAL_MISS @529 //No. No. [T-ERI08]
+        END
+        PATCH_IF SLONG_AT SPELL_DISRUPTED < 1 BEGIN
+          SAY SPELL_DISRUPTED ~~ [T-ERI04]
+        END
+      END
+    BUT_ONLY
+  END
+END
+
+ACTION_IF FILE_EXISTS_IN_GAME ~wardtief.cre~ BEGIN //Erinyes
+  COPY_EXISTING ~wardtief.cre~ ~override~
+    PATCH_IF SOURCE_SIZE > 0x2d3 BEGIN
+      WRITE_SHORT 0x28 0x6311 //Animation (thief_female_elf)
+      REPLACE_CRE_ITEM ~wings01~ #0 #0 #0 ~UNDROPPABLE~ ~HELMET~
+      WRITE_BYTE 0x272 121 //Race (fiend)
+      FOR (s1 = 0xa4; s1 < 0x1d0; s1 += 4) BEGIN //Clear soundset (is not Imoen)
+        WRITE_LONG s1 (0 - 1)
+      END
+      SAY INITIAL_MEETING @516 //Well hello there. [T-ERI02A]
+      SAY MORALE @517 //Farewell for now. [T-ERI06]
+      SAY UNHAPPY_BREAKING_POINT @517 //Farewell for now. [T-ERI06]
+      SAY BATTLE_CRY1 @518 //On your knees! [T-ERI01A]
+      SAY BATTLE_CRY2 @519 //You are mine! [T-ERI01B]
+      SAY BATTLE_CRY3 @520 //Rrrauugh!~ [T-ERI01C]
+      SAY BATTLE_CRY4 @521 //You tempt pain that you have never dreamed of. [T-ERI01D]
+      SAY BATTLE_CRY5 @522 //Rend their flesh! They will not need it. [T-ERI01E]
+      SAY ATTACK1 ~~ [T-ERI03]
+      SAY DAMAGE ~~ [T-ERI07]
+      SAY DYING ~~ [T-ERI09]
+      SAY HURT @523 //You want to heal me. You must. [T-ERI10]
+      SAY SELECT_COMMON1 @516 //Well hello there. [T-ERI02A]
+      SAY SELECT_COMMON2 @524 //I need to speak with you. Come here. [T-ERI02B]
+      SAY SELECT_COMMON3 @525 //Come to my side. Help me here. [T-ERI02C]
+      SAY SELECT_COMMON4 @526 //Oh, yes. [T-ERI02D]
+      SAY SELECT_COMMON5 @527 //Ha! Ha-ha-ha... [T-ERI02E]
+      SAY CRITICAL_HIT @528 //Oh, that is very nice. [T-ERI05]
+      SAY CRITICAL_MISS @529 //No. No. [T-ERI08]
+      SAY SPELL_DISRUPTED ~~ [T-ERI04]
+    END
+  BUT_ONLY
+END
+
+ACTION_FOR_EACH nb IN ~demsuc01~ ~finsucc~ ~gorsuc01~ ~gortan2~ ~gorwom01~ ~nssuc01~ ~nssuc02~ ~pstana02~ ~pstana2a~ ~sd_hrzr2~ ~yugsuc01~ BEGIN
+  ACTION_IF FILE_EXISTS_IN_GAME ~%nb%.cre~ BEGIN //Succubi
+    COPY_EXISTING ~%nb%.cre~ ~override~
+      PATCH_INCLUDE ~infinityanimations/lib/fj_cre_validity.tpp~
+      PATCH_IF vl BEGIN
+        PATCH_INCLUDE ~infinityanimations/lib/fj_cre_reindex.tpp~
+        WRITE_SHORT 0x28 0x5290 //Animation (succubus_nwn)
+        WRITE_BYTE 0x237 2 //Sex (female)
+        WRITE_BYTE 0x275 2 //Gender (female)
+        WRITE_BYTE 0x272 121 //Race (fiend)
+        READ_BYTE 0x273 cs //Class
+        PATCH_IF cs > 20 BEGIN
+          WRITE_BYTE 0x273 160 //tanar'ri
+        END
+        PATCH_IF SLONG_AT INITIAL_MEETING < 1 BEGIN
+          SAY INITIAL_MEETING @530 //Yes? [T-SUC02]
+        END
+        PATCH_IF SLONG_AT BATTLE_CRY1 < 1 BEGIN
+          SAY BATTLE_CRY1 @531 //Your death shall be beautiful! [T-SUC01A]
+          SAY BATTLE_CRY2 @532 //Your soul shall be mine! [T-SUC01B]
+        END
+        PATCH_IF SLONG_AT DYING < 1 BEGIN
+          SAY DYING ~~ [T-SUC09]
+        END
+        PATCH_IF SLONG_AT SELECT_COMMON1 < 1 BEGIN
+          SAY SELECT_COMMON1 @530 //Yes? [T-SUC02]
+        END
+      END
+    BUT_ONLY
+  END
+END
+
+ACTION_IF FILE_EXISTS_IN_GAME ~%tsu%kirinh.cre~ BEGIN //Kirinhale
+  COPY_EXISTING ~%tsu%kirinh.cre~ ~override~
+    PATCH_IF SOURCE_SIZE > 0x2d3 BEGIN
+      WRITE_SHORT 0x28 0x5290 //Animation (succubus_nwn)
+      PATCH_IF BYTE_AT 0x234 < 6 BEGIN
+        WRITE_BYTE 0x234 6 //Level 1 (was 0)
+      END
+      WRITE_BYTE 0x237 2 //Sex (female)
+      WRITE_BYTE 0x23e 25 //Charisma (was 30)
+      WRITE_BYTE 0x275 2 //Gender (female)
+      WRITE_BYTE 0x272 121 //Race (fiend)
+    END
+  BUT_ONLY
+END
+
+ACTION_FOR_EACH nb IN ~demmau01~ ~gortan6~ ~obsdem04~ BEGIN
+  ACTION_IF FILE_EXISTS_IN_GAME ~%nb%.cre~ BEGIN //Maurezhi
+    COPY_EXISTING ~%nb%.cre~ ~override~
+      PATCH_INCLUDE ~infinityanimations/lib/fj_cre_validity.tpp~
+      PATCH_IF vl BEGIN
+        PATCH_INCLUDE ~infinityanimations/lib/fj_cre_reindex.tpp~
+        WRITE_SHORT 0x28 0x547a //Animation (maurezhi)
+        WRITE_BYTE 0x2d 107 //Minor color (khaki)
+        WRITE_BYTE 0x2e 62 //Major color (dark lavender)
+        WRITE_BYTE 0x2f 62 //Skin color
+        LAUNCH_PATCH_FUNCTION DELETE_CRE_EFFECT
+          INT_VAR opcode_to_delete = 51 //Strong-dark by RGB
+        END
+        SAY INITIAL_MEETING #61750 //This place will be your tomb! [UNEARM01]
+        SAY MORALE #61757 //No! I must flee! [UNEARM08]
+        SAY UNHAPPY_BREAKING_POINT #61757
+        SAY BATTLE_CRY1 #61752 //You'll suffer before you die, I promise. [UNEARM03]
+        SAY BATTLE_CRY2 #61754 //I will be pleased to carve out your heart! [UNEARM05]
+        SAY DAMAGE #61755 //[UNEARM06]
+        SAY DYING #61756 //[UNEARM07]
+        SAY SELECT_COMMON1 #61750 //This place will be your tomb! [UNEARM01]
+        SAY SELECT_COMMON2 #61751 //You should not have come to this place! [UNEARM02]
+      END
+    BUT_ONLY
+  END
+END
+
+ACTION_FOR_EACH nb IN ~demgla01~ ~demglab~ ~demglab2~ ~demglasu~ ~eastdem1~ ~eastdem3~ ~eastdem5~ ~eastdem6~ ~eastdem8~ ~enddem01~ ~enddem02~ ~gglab~ ~ily5~ ~jondem01~ ~jondem03~ ~jondem05~ BEGIN
+//Assigns glabrezus the proper animation instead of balor or cornugon
+  ACTION_IF FILE_EXISTS_IN_GAME ~%nb%.cre~ BEGIN //Glabrezus
+    COPY_EXISTING ~%nb%.cre~ ~override~
+      PATCH_INCLUDE ~infinityanimations/lib/t-cre_fixer.tpp~ //These CREs need fixing because of hosed slots
+      WRITE_SHORT 0x28 0xe0f1 //Animation (glabrezu)
+      WRITE_BYTE 0x237 1 //Sex (male)
+      WRITE_BYTE 0x271 255 //General (monster)
+      READ_BYTE 0x275 gd //Gender
+      PATCH_IF (gd != 6) AND (gd != 9) BEGIN //If not summoned
+        WRITE_BYTE 0x275 1 //male
+      END
+    BUT_ONLY
+  END
+END
+VERBOSE
+
+//! Pit Fiends //////////////////////////////////////////////////////////////
+BEGIN @32 //All get the NWN animation
+SUBCOMPONENT @30 (MOD_IS_INSTALLED ~setup-infinityanimations.tp2~ 0) //Pit Fiends
+DESIGNATED 150
+REQUIRE_COMPONENT ~setup-infinityanimations.tp2~ 0 @26 //This component requires the main component.
+
+ACTION_IF NOT MOD_IS_INSTALLED ~setup-infinityanimations.tp2~ 0 BEGIN
+  FAIL @26 //This component requires the main component.
+END
+
+ACTION_FOR_EACH nb IN ~caddem11~ ~caddem18~ ~caddem25~ ~caddem3~ ~dempit~ ~dempit01~ ~dempitr1~ ~dempitr2~ ~dempitsu~ ~dubnd11~ ~dw#bazpf~ ~dw#pitsu~ ~heldem3~ ~heldem4~ ~heldem5~ ~psbaatl~ ~rempitsu~ ~telpit1~ ~telpit2~ ~tg#dem1~ ~z#gpit01~ ~z#gpitfd~ ~z_whel1~ ~z_whel2~ ~z_whel3~ ~z_whel4~ BEGIN
+  ACTION_IF FILE_EXISTS_IN_GAME ~%nb%.cre~ BEGIN //Pit Fiends
+    OUTER_SET rgp = 1
+    INCLUDE ~infinityanimations/lib/t-pit_fiend.tpa~
+  END
+END
+
+BEGIN @33 //Some get the NWN animation
+SUBCOMPONENT @30 (MOD_IS_INSTALLED ~setup-infinityanimations.tp2~ 0) //Pit Fiends
+DESIGNATED 175
+REQUIRE_COMPONENT ~setup-infinityanimations.tp2~ 0 @26 //This component requires the main component.
+
+ACTION_IF NOT MOD_IS_INSTALLED ~setup-infinityanimations.tp2~ 0 BEGIN
+  FAIL @26 //This component requires the main component.
+END
+
+ACTION_FOR_EACH nb IN ~caddem11~ ~caddem18~ ~caddem25~ ~caddem3~ ~dempit~ ~dempit01~ ~dempitr1~ ~dempitr2~ ~dempitsu~ ~dubnd11~ ~dw#bazpf~ ~dw#pitsu~ ~heldem3~ ~heldem4~ ~heldem5~ ~psbaatl~ ~rempitsu~ ~telpit1~ ~telpit2~ ~tg#dem1~ ~z#gpit01~ ~z#gpitfd~ ~z_whel1~ ~z_whel2~ ~z_whel3~ ~z_whel4~ BEGIN
+  ACTION_IF FILE_EXISTS_IN_GAME ~%nb%.cre~ BEGIN //Pit Fiends
+    RANDOM_SEED null //Initialize random numbers
+    OUTER_SET rgp = RANDOM(1 2)
+    INCLUDE ~infinityanimations/lib/t-pit_fiend.tpa~
+  END
+END
+
+//! Cambion/Isair Animation /////////////////////////////////////////////////
+BEGIN ~All cambions and male tieflings~
+//SUBCOMPONENT @35 (MOD_IS_INSTALLED ~setup-infinityanimations.tp2~ 0) //Cambion/Isair Animation
+DEPRECATED ~Use the PS:T component for tieflings instead.~
+DESIGNATED 200
+REQUIRE_COMPONENT ~setup-infinityanimations.tp2~ 0 @26 //This component requires the main component.
+
+ACTION_IF NOT MOD_IS_INSTALLED ~setup-infinityanimations.tp2~ 0 BEGIN
+  FAIL @26 //This component requires the main component.
+END
+
+OUTER_SET rgc = 1
+OUTER_SET rcc = 0 //Cambions
+ACTION_FOR_EACH nb IN ~bpdemon1~ ~cambion1~ ~cambion2~ ~demlord~ ~demosum4~ ~fincamb2~ ~garmari3~ ~garmari4~ ~godmari2~ ~gorcamb~ ~idemon01~ ~idemon02~ ~illcamb~ ~illcamb2~ ~kdemon01~ ~kz#dmlrd~ ~nscamb01~ ~nscamb03~ ~ntroach~ ~telcam1~ ~tg#did1~ ~tg#did2~ ~uddemon~ BEGIN
+  ACTION_IF FILE_EXISTS_IN_GAME ~%nb%.cre~ BEGIN //Cambions
+    INCLUDE ~infinityanimations/lib/t-cambion.tpa~
+  END
+END
+
+OUTER_SET rcc = 1 //Tieflings
+ACTION_FOR_EACH nb IN ~e3cirion~ ~e3jekhri~ ~e3sume~ ~e3taeghe~ ~e3xekral~ ~gorcamb4~ ~gorcamb5~ ~gorgua02~ ~nstief02~ ~pbhunt01~ ~teltief1~ ~tief_w1~ ~tief_w2~ ~zaki~ BEGIN
+  ACTION_IF FILE_EXISTS_IN_GAME ~%nb%.cre~ BEGIN //Tieflings
+    INCLUDE ~infinityanimations/lib/t-cambion.tpa~
+  END
+END
+
+BEGIN @36 //All cambions
+SUBCOMPONENT @35 (MOD_IS_INSTALLED ~setup-infinityanimations.tp2~ 0) //Cambion/Isair Animation
+DESIGNATED 210
+REQUIRE_COMPONENT ~setup-infinityanimations.tp2~ 0 @26 //This component requires the main component.
+
+ACTION_IF NOT MOD_IS_INSTALLED ~setup-infinityanimations.tp2~ 0 BEGIN
+  FAIL @26 //This component requires the main component.
+END
+
+OUTER_SET rgc = 1
+OUTER_SET rcc = 0 //Cambions
+ACTION_FOR_EACH nb IN ~bpdemon1~ ~cambion1~ ~cambion2~ ~demlord~ ~demosum4~ ~fincamb2~ ~garmari3~ ~garmari4~ ~godmari2~ ~gorcamb~ ~idemon01~ ~idemon02~ ~illcamb~ ~illcamb2~ ~kdemon01~ ~kz#dmlrd~ ~nscamb01~ ~nscamb03~ ~ntroach~ ~telcam1~ ~tg#did1~ ~tg#did2~ ~uddemon~ BEGIN
+  ACTION_IF FILE_EXISTS_IN_GAME ~%nb%.cre~ BEGIN
+    INCLUDE ~infinityanimations/lib/t-cambion.tpa~
+  END
+END
+
+BEGIN ~Some cambions and male tieflings~
+//SUBCOMPONENT @35 (MOD_IS_INSTALLED ~setup-infinityanimations.tp2~ 0) //Cambion/Isair Animation
+DEPRECATED ~Use the PS:T component for tieflings instead.~
+DESIGNATED 220
+REQUIRE_COMPONENT ~setup-infinityanimations.tp2~ 0 @26 //This component requires the main component.
+
+ACTION_IF NOT MOD_IS_INSTALLED ~setup-infinityanimations.tp2~ 0 BEGIN
+  FAIL @26 //This component requires the main component.
+END
+
+OUTER_SET rcc = 0 //Cambions
+ACTION_FOR_EACH nb IN ~bpdemon1~ ~cambion1~ ~cambion2~ ~demlord~ ~demosum4~ ~fincamb2~ ~garmari3~ ~garmari4~ ~godmari2~ ~gorcamb~ ~idemon01~ ~idemon02~ ~illcamb~ ~illcamb2~ ~kdemon01~ ~kz#dmlrd~ ~nscamb01~ ~nscamb03~ ~ntroach~ ~telcam1~ ~tg#did1~ ~tg#did2~ ~uddemon~ BEGIN
+  ACTION_IF FILE_EXISTS_IN_GAME ~%nb%.cre~ BEGIN
+    RANDOM_SEED null //Initialize random numbers
+    OUTER_SET rgc = RANDOM(1 2)
+    INCLUDE ~infinityanimations/lib/t-cambion.tpa~
+  END
+END
+
+OUTER_SET rcc = 1 //Tieflings
+ACTION_FOR_EACH nb IN ~e3cirion~ ~e3jekhri~ ~e3sume~ ~e3taeghe~ ~e3xekral~ ~gorcamb4~ ~gorcamb5~ ~gorgua02~ ~nstief02~ ~pbhunt01~ ~teltief1~ ~tief_w1~ ~tief_w2~ ~zaki~ BEGIN
+  ACTION_IF FILE_EXISTS_IN_GAME ~%nb%.cre~ BEGIN
+    RANDOM_SEED null //Initialize random numbers
+    OUTER_SET rgc = RANDOM(1 2)
+    INCLUDE ~infinityanimations/lib/t-cambion.tpa~
+  END
+END
+
+BEGIN @37 //Some cambions
+SUBCOMPONENT @35 (MOD_IS_INSTALLED ~setup-infinityanimations.tp2~ 0) //Cambion/Isair Animation
+DESIGNATED 230
+REQUIRE_COMPONENT ~setup-infinityanimations.tp2~ 0 @26 //This component requires the main component.
+
+ACTION_IF NOT MOD_IS_INSTALLED ~setup-infinityanimations.tp2~ 0 BEGIN
+  FAIL @26 //This component requires the main component.
+END
+
+OUTER_SET rcc = 0 //Cambions
+ACTION_FOR_EACH nb IN ~bpdemon1~ ~cambion1~ ~cambion2~ ~demlord~ ~demosum4~ ~fincamb2~ ~garmari3~ ~garmari4~ ~godmari2~ ~gorcamb~ ~idemon01~ ~idemon02~ ~illcamb~ ~illcamb2~ ~kdemon01~ ~kz#dmlrd~ ~nscamb01~ ~nscamb03~ ~ntroach~ ~telcam1~ ~tg#did1~ ~tg#did2~ ~uddemon~ BEGIN
+  ACTION_IF FILE_EXISTS_IN_GAME ~%nb%.cre~ BEGIN //Cambions
+    RANDOM_SEED null //Initialize random numbers
+    OUTER_SET rgc = RANDOM(1 2)
+    INCLUDE ~infinityanimations/lib/t-cambion.tpa~
+  END
+END
+
+//! Alu-Fiend/Madae Animation ///////////////////////////////////////////////
+BEGIN ~All alu-fiends and female tieflings~
+//SUBCOMPONENT @38 (MOD_IS_INSTALLED ~setup-infinityanimations.tp2~ 0) //Alu-Fiend/Madae Animation
+DEPRECATED ~Use the PS:T component for tieflings instead.~
+DESIGNATED 250
+REQUIRE_COMPONENT ~setup-infinityanimations.tp2~ 0 @26 //This component requires the main component.
+
+ACTION_IF NOT MOD_IS_INSTALLED ~setup-infinityanimations.tp2~ 0 BEGIN
+  FAIL @26 //This component requires the main component.
+END
+
+OUTER_SET rgf = 1
+OUTER_SET rcf = 0 //Alu-fiends
+ACTION_FOR_EACH nb IN ~alufie01~ ~alufie02~ ~e3demon2~ ~finaluf~ ~goralu01~ ~gorwom06~ ~nsaluf01~ ~ntindfi1~ ~ntindfi2~ ~ntindfig~ ~telalu1~ ~telsuc1~ ~xsdemon~ ~yugalu01~ BEGIN
+  ACTION_IF FILE_EXISTS_IN_GAME ~%nb%.cre~ BEGIN
+    INCLUDE ~infinityanimations/lib/t-alu-fiend.tpa~
+  END
+END
+
+OUTER_SET rcf = 1 //Tieflings
+ACTION_FOR_EACH nb IN ~d#mary~ ~e3eriale~ ~e3savany~ ~gorcamb2~ ~gorcamb3~ ~nstief01~ ~raelis~ ~teltief2~ ~teltief3~ ~tief_as~ BEGIN
+  ACTION_IF FILE_EXISTS_IN_GAME ~%nb%.cre~ BEGIN
+    INCLUDE ~infinityanimations/lib/t-alu-fiend.tpa~
+  END
+END
+
+BEGIN @39 //All alu-fiends
+SUBCOMPONENT @38 (MOD_IS_INSTALLED ~setup-infinityanimations.tp2~ 0) //Alu-Fiend/Madae Animation
+DESIGNATED 260
+REQUIRE_COMPONENT ~setup-infinityanimations.tp2~ 0 @26 //This component requires the main component.
+
+ACTION_IF NOT MOD_IS_INSTALLED ~setup-infinityanimations.tp2~ 0 BEGIN
+  FAIL @26 //This component requires the main component.
+END
+
+OUTER_SET rgf = 1
+OUTER_SET rcf = 0 //Alu-fiends
+ACTION_FOR_EACH nb IN ~alufie01~ ~alufie02~ ~e3demon2~ ~finaluf~ ~goralu01~ ~gorwom06~ ~nsaluf01~ ~ntindfi1~ ~ntindfi2~ ~ntindfig~ ~telalu1~ ~telsuc1~ ~xsdemon~ ~yugalu01~ BEGIN
+  ACTION_IF FILE_EXISTS_IN_GAME ~%nb%.cre~ BEGIN
+    INCLUDE ~infinityanimations/lib/t-alu-fiend.tpa~
+  END
+END
+
+BEGIN ~Some alu-fiends and female tieflings~
+//SUBCOMPONENT @38 (MOD_IS_INSTALLED ~setup-infinityanimations.tp2~ 0) //Alu-Fiend/Madae Animation
+DEPRECATED ~Use the PS:T component for tieflings instead.~
+DESIGNATED 270
+REQUIRE_COMPONENT ~setup-infinityanimations.tp2~ 0 @26 //This component requires the main component.
+
+ACTION_IF NOT MOD_IS_INSTALLED ~setup-infinityanimations.tp2~ 0 BEGIN
+  FAIL @26 //This component requires the main component.
+END
+
+OUTER_SET rcf = 0 //Alu-fiends
+ACTION_FOR_EACH nb IN ~alufie01~ ~alufie02~ ~e3demon2~ ~finaluf~ ~goralu01~ ~gorwom06~ ~nsaluf01~ ~ntindfi1~ ~ntindfi2~ ~ntindfig~ ~telalu1~ ~telsuc1~ ~xsdemon~ ~yugalu01~ BEGIN
+  ACTION_IF FILE_EXISTS_IN_GAME ~%nb%.cre~ BEGIN
+    RANDOM_SEED null //Initialize random numbers
+    OUTER_SET rgf = RANDOM(1 2)
+    INCLUDE ~infinityanimations/lib/t-alu-fiend.tpa~
+  END
+END
+
+OUTER_SET rcf = 1 //Tieflings
+ACTION_FOR_EACH nb IN ~d#mary~ ~e3eriale~ ~e3savany~ ~gorcamb2~ ~gorcamb3~ ~nstief01~ ~raelis~ ~teltief2~ ~teltief3~ ~tief_as~ BEGIN
+  ACTION_IF FILE_EXISTS_IN_GAME ~%nb%.cre~ BEGIN
+    RANDOM_SEED null //Initialize random numbers
+    OUTER_SET rgf = RANDOM(1 2)
+    INCLUDE ~infinityanimations/lib/t-alu-fiend.tpa~
+  END
+END
+
+BEGIN @40 //Some alu-fiends
+SUBCOMPONENT @38 (MOD_IS_INSTALLED ~setup-infinityanimations.tp2~ 0) //Alu-Fiend/Madae Animation
+DESIGNATED 280
+REQUIRE_COMPONENT ~setup-infinityanimations.tp2~ 0 @26 //This component requires the main component.
+
+ACTION_IF NOT MOD_IS_INSTALLED ~setup-infinityanimations.tp2~ 0 BEGIN
+  FAIL @26 //This component requires the main component.
+END
+
+OUTER_SET rcf = 0 //Alu-fiends
+ACTION_FOR_EACH nb IN ~alufie01~ ~alufie02~ ~e3demon2~ ~finaluf~ ~goralu01~ ~gorwom06~ ~nsaluf01~ ~ntindfi1~ ~ntindfi2~ ~ntindfig~ ~telalu1~ ~telsuc1~ ~xsdemon~ ~yugalu01~ BEGIN
+  ACTION_IF FILE_EXISTS_IN_GAME ~%nb%.cre~ BEGIN
+    RANDOM_SEED null //Initialize random numbers
+    OUTER_SET rgf = RANDOM(1 2)
+    INCLUDE ~infinityanimations/lib/t-alu-fiend.tpa~
+  END
+END
+
+//! Distinctive Undead //////////////////////////////////////////////////////
+BEGIN @41 //Distinctive Undead
+DESIGNATED 400
+REQUIRE_COMPONENT ~setup-infinityanimations.tp2~ 0 @26 //This component requires the main component.
+
+ACTION_IF NOT MOD_IS_INSTALLED ~setup-infinityanimations.tp2~ 0 BEGIN
+  FAIL @26 //This component requires the main component.
+END
+
+SILENT
+ACTION_FOR_EACH nb IN ~banshe01~ ~banshee1~ ~dsbanshe~ ~f_wailin~ ~firmon01~ ~jerlia~ ~psfear~ ~telwrai~ BEGIN
+  ACTION_IF FILE_EXISTS_IN_GAME ~%nb%.cre~ BEGIN //Banshees
+    COPY_EXISTING ~%nb%.cre~ ~override~
+      PATCH_INCLUDE ~infinityanimations/lib/fj_cre_validity.tpp~
+      PATCH_IF vl BEGIN
+        PATCH_INCLUDE ~infinityanimations/lib/fj_cre_reindex.tpp~
+        WRITE_SHORT 0x28 0xe0f2 //Animation (wailing_virgin)
+        WRITE_BYTE 0x237 2 //Sex (female)
+        WRITE_BYTE 0x271 4 //General (undead)
+        WRITE_BYTE 0x272 134 //Race (wraith)
+        READ_BYTE 0x273 cs //Class
+        PATCH_IF (cs = 118) OR (cs = 255) BEGIN //If ghast or no_class
+          WRITE_BYTE 0x273 172 //wraith
+        END
+        WRITE_BYTE 0x275 2 //Gender (female)
+      END
+    BUT_ONLY
+  END
+END
+
+ACTION_FOR_EACH nb IN ~f_stongl~ ~hlskull~ BEGIN
+  ACTION_IF FILE_EXISTS_IN_GAME ~%nb%.cre~ BEGIN //Skulls
+    COPY_EXISTING ~%nb%.cre~ ~override~
+      PATCH_INCLUDE ~infinityanimations/lib/fj_cre_validity.tpp~
+      PATCH_IF vl BEGIN
+        PATCH_INCLUDE ~infinityanimations/lib/fj_cre_reindex.tpp~
+        WRITE_SHORT 0x28 0x7f0e //Animation (demilich)
+        WRITE_BYTE 0x271 255 //General (monster)
+        WRITE_BYTE 0x272 155 //Race (demilich)
+        READ_BYTE 0x273 cs //Class
+        PATCH_IF cs = 255 BEGIN //If no_class
+          WRITE_BYTE 0x273 2 //fighter
+        END
+      END
+    BUT_ONLY
+  END
+END
+
+ACTION_FOR_EACH nb IN ~bhghoul4~ ~sk#ssp3~ ~xghast2~ BEGIN
+  ACTION_IF FILE_EXISTS_IN_GAME ~%nb%.cre~ BEGIN //Ghoul Queens
+    COPY_EXISTING ~%nb%.cre~ ~override~
+      PATCH_INCLUDE ~infinityanimations/lib/fj_cre_validity.tpp~
+      PATCH_IF vl BEGIN
+        PATCH_INCLUDE ~infinityanimations/lib/fj_cre_reindex.tpp~
+        WRITE_SHORT 0x28 0x5b08 //Animation (ghoul_queen)
+        WRITE_BYTE 0x237 2 //Sex (female)
+        WRITE_BYTE 0x271 4 //General (undead)
+        READ_BYTE 0x275 gd //Gender
+        PATCH_IF gd != 6 BEGIN //If not summoned
+          WRITE_BYTE 0x275 2 //female
+        END
+        SAY INITIAL_MEETING ~~ [T-GHQ04]
+        SAY MORALE ~~ [T-GHQ07]
+        SAY UNHAPPY_BREAKING_POINT ~~ [T-GHQ07]
+        SAY BATTLE_CRY1 ~~ [T-GHQ02]
+        SAY BATTLE_CRY2 ~~ [T-GHQ09]
+        SAY ATTACK1 ~~ [T-GHQ03]
+        SAY DAMAGE ~~ [T-GHQ06]
+        SAY DYING ~~ [T-GHQ08]
+        SAY SELECT_COMMON1 ~~ [T-GHQ01]
+        SAY SELECT_COMMON2 ~~ [T-GHQ10]
+      END
+    BUT_ONLY
+  END
+END
+
+ACTION_FOR_EACH nb IN ~bhghoul2~ ~%tsu%ghast~ ~ghast01~ ~%tsu%ghastd~ ~%tsu%ghasts~ ~gmayor~ ~%tsu%grael~ ~gron~ ~nevm3~ ~%tsu%sewerf3~ ~xghast1~ BEGIN
+  ACTION_IF FILE_EXISTS_IN_GAME ~%nb%.cre~ BEGIN //Ghasts
+    COPY_EXISTING ~%nb%.cre~ ~override~
+      PATCH_INCLUDE ~infinityanimations/lib/fj_cre_validity.tpp~
+      PATCH_IF vl BEGIN
+        PATCH_INCLUDE ~infinityanimations/lib/fj_cre_reindex.tpp~
+        WRITE_SHORT 0x28 0x7702 //Animation (ghoul_ghast)
+        WRITE_BYTE 0x237 1 //Sex (male)
+        WRITE_BYTE 0x271 4 //General (undead)
+        READ_BYTE 0x275 gd //Gender
+        PATCH_IF gd != 6 BEGIN //If not summoned
+          WRITE_BYTE 0x275 4 //neither
+        END
+      END
+    BUT_ONLY
+  END
+END
+
+ACTION_FOR_EACH nb IN ~besamen~ ~bpghast~ ~ghastf01~ ~ghastgsu~ ~sghastgr~ ~sk#algol~ ~theshal~ BEGIN
+  ACTION_IF FILE_EXISTS_IN_GAME ~%nb%.cre~ BEGIN //Ghasts IWD
+    COPY_EXISTING ~%nb%.cre~ ~override~
+      PATCH_INCLUDE ~infinityanimations/lib/fj_cre_validity.tpp~
+      PATCH_IF vl BEGIN
+        PATCH_INCLUDE ~infinityanimations/lib/fj_cre_reindex.tpp~
+        WRITE_SHORT 0x28 0xe320 //Animation (ghast_iwd)
+        WRITE_BYTE 0x237 1 //Sex (male)
+        WRITE_BYTE 0x271 4 //General (undead)
+        READ_BYTE 0x275 gd //Gender
+        PATCH_IF gd != 6 BEGIN //If not summoned
+          WRITE_BYTE 0x275 4 //neither
+        END
+      END
+    BUT_ONLY
+  END
+END
+
+ACTION_FOR_EACH nb IN ~cbselims~ ~cbspkded~ ~cmhaun01~ ~cmhaun02~ ~demresd~ ~mtghost~ ~psminvo~ ~sarspir~ BEGIN
+  ACTION_IF FILE_EXISTS_IN_GAME ~%nb%.cre~ BEGIN //Ghosts
+    COPY_EXISTING ~%nb%.cre~ ~override~
+      PATCH_INCLUDE ~infinityanimations/lib/fj_cre_validity.tpp~
+      PATCH_IF vl BEGIN
+        PATCH_INCLUDE ~infinityanimations/lib/fj_cre_reindex.tpp~
+        WRITE_SHORT 0x28 0xe300 //Animation (ghost_iwd)
+        READ_BYTE 0x237 sx //Sex
+        PATCH_IF sx != 2 BEGIN //If not female
+          sx = 1
+          WRITE_BYTE 0x237 1 //Sex (male)
+        END
+        WRITE_BYTE 0x271 4 //General (undead)
+        WRITE_BYTE 0x272 133 //Race (spectre)
+        READ_BYTE 0x273 cs //Class
+        PATCH_IF cs > 20 BEGIN //If invalid class
+          WRITE_BYTE 0x273 171 //spectre
+        END
+        READ_BYTE 0x275 gd //Gender
+        PATCH_IF (gd != 6) AND ((gd != 2) OR (sx = 1)) BEGIN //If not summoned and not female
+          WRITE_BYTE 0x275 1 //male
+        END
+        PATCH_IF (sx = 2) AND (gd != 2) BEGIN //If female
+          WRITE_BYTE 0x275 2 //female
+        END
+      END
+    BUT_ONLY
+  END
+END
+
+ACTION_FOR_EACH nb IN ~bhghoul1~ ~bodakmd~ ~%tsu%ghoul~ ~ghoul01~ ~ghoulsu~ ~gtcit1~ ~gtcit2~ ~%tsu%korax~ BEGIN
+  ACTION_IF FILE_EXISTS_IN_GAME ~%nb%.cre~ BEGIN //Ghouls
+    COPY_EXISTING ~%nb%.cre~ ~override~
+      PATCH_INCLUDE ~infinityanimations/lib/fj_cre_validity.tpp~
+      PATCH_IF vl BEGIN
+        PATCH_INCLUDE ~infinityanimations/lib/fj_cre_reindex.tpp~
+        WRITE_SHORT 0x28 0x7700 //Animation (ghoul)
+        WRITE_BYTE 0x271 4 //General (undead)
+        WRITE_BYTE 0x272 108 //Race (ghoul)
+        WRITE_BYTE 0x273 116 //Class (ghoul)
+      END
+    BUT_ONLY
+  END
+END
+
+ACTION_FOR_EACH nb IN ~ghogr01~ ~gholor01~ ~%tsg%houllor~ ~lester~ ~riftcr01~ BEGIN
+  ACTION_IF FILE_EXISTS_IN_GAME ~%nb%.cre~ BEGIN //Ghouls IWD
+    COPY_EXISTING ~%nb%.cre~ ~override~
+      PATCH_INCLUDE ~infinityanimations/lib/fj_cre_validity.tpp~
+      PATCH_IF vl BEGIN
+        PATCH_INCLUDE ~infinityanimations/lib/fj_cre_reindex.tpp~
+        WRITE_SHORT 0x28 0xe310 //Animation (ghoul_iwd)
+        WRITE_BYTE 0x273 116 //Class (ghoul)
+      END
+    BUT_ONLY
+  END
+END
+
+ACTION_FOR_EACH nb IN ~amlich01~ ~banco~ ~bhcrypt~ ~bhelal~ ~cbc8ctl2~ ~cbc8ctl3~ ~cbc8ctzl~ ~cedelich~ ~celich~ ~d0lich01~ ~f_lich~ ~firlch01~ ~frdeath~ ~garlich1~ ~garlich2~ ~godlich1~ ~godlich2~ ~gorlic01~ ~gorpri1~ ~grvlch01~ ~hlkang~ ~hllich~ ~hlshade~ ~hlshang~ ~jarlich~ ~krlich2~ ~larrel~ ~larrel2~ ~lichel01~ ~lichguar~ ~mytos~ ~psvecna~ ~senlich~ ~va#lich~ BEGIN
+  ACTION_IF FILE_EXISTS_IN_GAME ~%nb%.cre~ BEGIN //Liches
+    COPY_EXISTING ~%nb%.cre~ ~override~
+      PATCH_INCLUDE ~infinityanimations/lib/fj_cre_validity.tpp~
+      PATCH_IF vl BEGIN
+        PATCH_INCLUDE ~infinityanimations/lib/fj_cre_reindex.tpp~
+        WRITE_SHORT 0x28 0x7f0d //Animation (lich)
+        WRITE_BYTE 0x237 1 //Sex (male)
+        WRITE_BYTE 0x271 4 //General (undead)
+        WRITE_BYTE 0x272 150 //Race (lich)
+        WRITE_BYTE 0x275 1 //Gender (male)
+      END
+    BUT_ONLY
+  END
+END
+
+ACTION_FOR_EACH nb IN ~archlich~ ~b#lich01~ ~b#lich02~ ~d0lich02~ ~dpmon02~ ~dslich~ ~dslich1~ ~dslich2~ ~dslich3~ ~dw#lich1~ ~dw#lich2~ ~dw#lich3~ ~dw#lich4~ ~hlayskel~ ~macgskmg~ ~nevaziah~ ~o#srax~ ~pklich1~ ~pksum1~ ~pksum2~ ~pksum3~ ~shadeld~ ~sk#vidu~ ~travmage~ ~tunelich~ BEGIN
+  ACTION_IF FILE_EXISTS_IN_GAME ~%nb%.cre~ BEGIN //Liches IWD
+    COPY_EXISTING ~%nb%.cre~ ~override~
+      PATCH_INCLUDE ~infinityanimations/lib/fj_cre_validity.tpp~
+      PATCH_IF vl BEGIN
+        PATCH_INCLUDE ~infinityanimations/lib/fj_cre_reindex.tpp~
+        WRITE_SHORT 0x28 0xe060 //Animation (lich_iwd)
+        WRITE_BYTE 0x237 1 //Sex (male)
+        WRITE_BYTE 0x271 4 //General (undead)
+        WRITE_BYTE 0x272 150 //Race (lich)
+        WRITE_BYTE 0x275 1 //Gender (male)
+      END
+    BUT_ONLY
+  END
+END
+
+ACTION_FOR_EACH nb IN ~cultmo8~ ~iwdmist3~ ~mistwa01~ ~pkghost1~ ~pkghost2~ ~tadream~ ~tg#spir~ ~undapp~ BEGIN
+  ACTION_IF FILE_EXISTS_IN_GAME ~%nb%.cre~ BEGIN //Mist Apparitions
+    COPY_EXISTING ~%nb%.cre~ ~override~
+      PATCH_INCLUDE ~infinityanimations/lib/fj_cre_validity.tpp~
+      PATCH_IF vl BEGIN
+        PATCH_INCLUDE ~infinityanimations/lib/fj_cre_reindex.tpp~
+        WRITE_SHORT 0x28 0x7f35 //Animation (mist_creature)
+        READ_BYTE 0x237 sx //Sex
+        PATCH_IF sx != 2 BEGIN //If not female
+          sx = 1
+          WRITE_BYTE 0x237 1 //Sex (male)
+        END
+        WRITE_BYTE 0x271 4 //General (undead)
+        WRITE_BYTE 0x272 136 //Race (mist)
+        READ_BYTE 0x273 cs //Class
+        PATCH_IF cs > 20 BEGIN //If invalid class
+
+          WRITE_BYTE 0x273 174 //mist
+        END
+        READ_BYTE 0x275 gd //Gender
+        PATCH_IF (gd != 6) AND ((gd != 2) OR (sx = 1)) BEGIN //If not summoned and not female
+          WRITE_BYTE 0x275 1 //male
+        END
+        PATCH_IF (sx = 2) AND (gd != 2) BEGIN //If female
+          WRITE_BYTE 0x275 2 //female
+        END
+      END
+    BUT_ONLY
+  END
+END
+
+ACTION_FOR_EACH nb IN ~%tsu%fearm~ ~firmon04~ ~grreven~ ~reven01~ ~%tsu%revent~ ~srevnnt~ BEGIN
+  ACTION_IF FILE_EXISTS_IN_GAME ~%nb%.cre~ BEGIN //Revenants
+    COPY_EXISTING ~%nb%.cre~ ~override~
+      PATCH_INCLUDE ~infinityanimations/lib/fj_cre_validity.tpp~
+      PATCH_IF vl BEGIN
+        PATCH_INCLUDE ~infinityanimations/lib/fj_cre_reindex.tpp~
+        WRITE_SHORT 0x28 0x7701 //Animation (ghoul_revenant)
+        WRITE_BYTE 0x271 4 //General (undead)
+      END
+    BUT_ONLY
+  END
+END
+
+ACTION_FOR_EACH nb IN ~ddplota5~ ~f_shfien~ ~hgwra02~ ~hgwra03~ ~m#ymmurd~ ~minodar1~ ~minodar2~ ~psgnight~ ~psnight~ ~psnisum~ ~sdshadfi~ ~sewsha01~ ~sewsha02~ ~shadfi01~ ~shadfx1~ ~sk#ssp1~ BEGIN
+  ACTION_IF FILE_EXISTS_IN_GAME ~%nb%.cre~ BEGIN //Shadow Fiends
+    COPY_EXISTING ~%nb%.cre~ ~override~
+      PATCH_INCLUDE ~infinityanimations/lib/fj_cre_validity.tpp~
+      PATCH_IF vl BEGIN
+        PATCH_INCLUDE ~infinityanimations/lib/fj_cre_reindex.tpp~
+        WRITE_SHORT 0x28 0x7703 //Animation (ghoul_shadow)
+        WRITE_BYTE 0x237 1 //Sex (male)
+        WRITE_BYTE 0x271 4 //General (undead)
+        WRITE_BYTE 0x272 132 //Race (shadow)
+        READ_BYTE 0x273 cs //Class
+        PATCH_IF cs > 20 BEGIN //If invalid class
+          WRITE_BYTE 0x273 170 //shadow
+        END
+      END
+    BUT_ONLY
+  END
+END
+
+ACTION_FOR_EACH nb IN ~bhwraith~ ~cbmalr6a~ ~firwra01~ ~hgmis01~ ~rngsha02~ ~rngsha04~ ~telslav~ ~wraith01~ ~wraithsu~ ~wrashi01~ BEGIN
+  ACTION_IF FILE_EXISTS_IN_GAME ~%nb%.cre~ BEGIN //Wraiths
+    COPY_EXISTING ~%nb%.cre~ ~override~
+      PATCH_INCLUDE ~infinityanimations/lib/fj_cre_validity.tpp~
+      PATCH_IF vl BEGIN
+        PATCH_INCLUDE ~infinityanimations/lib/fj_cre_reindex.tpp~
+        WRITE_SHORT 0x28 0xea20 //Animation (shadow_large_iwd)
+        WRITE_BYTE 0x271 4 //General (undead)
+        WRITE_BYTE 0x272 134 //Race (wraith)
+        READ_BYTE 0x273 cs //Class
+        PATCH_IF cs > 20 BEGIN //If invalid class
+          WRITE_BYTE 0x273 172 //wraith
+        END
+        READ_BYTE 0x275 gd //Gender
+        PATCH_IF gd != 6 BEGIN //If not summoned
+          WRITE_BYTE 0x275 4 //neither
+        END
+      END
+    BUT_ONLY
+  END
+END
+
+ACTION_FOR_EACH nb IN ~caddem22~ ~cbmalr6b~ ~demspec~ ~godhate~ ~pkghost4~ ~sahspc01~ ~spectr01~ BEGIN
+  ACTION_IF FILE_EXISTS_IN_GAME ~%nb%.cre~ BEGIN //Spectres
+    COPY_EXISTING ~%nb%.cre~ ~override~
+      PATCH_INCLUDE ~infinityanimations/lib/fj_cre_validity.tpp~
+      PATCH_IF vl BEGIN
+        PATCH_INCLUDE ~infinityanimations/lib/fj_cre_reindex.tpp~
+        WRITE_SHORT 0x28 0x526b //Animation (shadow_large_murky)
+        WRITE_BYTE 0x271 4 //General (undead)
+        WRITE_BYTE 0x272 133 //Race (spectre)
+        READ_BYTE 0x273 cs //Class
+        PATCH_IF cs > 20 BEGIN //If invalid class
+          WRITE_BYTE 0x273 172 //wraith
+        END
+        READ_BYTE 0x275 gd //Gender
+        PATCH_IF gd != 6 BEGIN //If not summoned
+          WRITE_BYTE 0x275 4 //neither
+        END
+      END
+    BUT_ONLY
+  END
+END
+
+ACTION_FOR_EACH nb IN ~a#sdsha2~ ~a#sdsha3~ ~a#sdsha4~ ~krshadm~ ~krshadow~ ~myshdw01~ ~myshdw02~ ~myshdw03~ ~myshdw04~ ~myshdw05~ ~myshdw06~ ~myshdw07~ ~myshdw08~ ~myshdw09~ ~myshdw10~ ~rngsha~ ~rngsha01~ ~rngsha03~ ~sdshadow~ ~sewsha03~ ~shadesm2~ ~shadesm3~ ~specx1~ ~uhcreat~ BEGIN
+  ACTION_IF FILE_EXISTS_IN_GAME ~%nb%.cre~ BEGIN //Shadows
+    COPY_EXISTING ~%nb%.cre~ ~override~
+      PATCH_INCLUDE ~infinityanimations/lib/fj_cre_validity.tpp~
+      PATCH_IF vl BEGIN
+        PATCH_INCLUDE ~infinityanimations/lib/fj_cre_reindex.tpp~
+        WRITE_SHORT 0x28 0xea10 //Animation (shadow_small_iwd)
+        WRITE_BYTE 0x237 1 //Sex (male)
+        WRITE_BYTE 0x271 4 //General (undead)
+        WRITE_BYTE 0x272 132 //Race (shadow)
+      END
+    BUT_ONLY
+  END
+END
+
+ACTION_FOR_EACH nb IN ~a#sdsha1~ ~elearb01~ ~elearb02~ ~elearb03~ ~elearb04~ ~elearb05~ ~elearb06~ ~elearb07~ ~elearb08~ ~elearb09~ ~elearb10~ ~elearb11~ ~kshadow~ ~lshadfi~ ~lshadow~ ~monkss19~ ~monkss2~ ~monkss20~ ~monkss21~ ~monkss25~ ~monkss3~ ~monkss4~ ~monkss5~ ~monkss6~ ~monkss7~ ~monkss8~ ~shadesm1~ ~va#shdgl~ ~z#gaunt~ BEGIN
+  ACTION_IF FILE_EXISTS_IN_GAME ~%nb%.cre~ BEGIN //Shadows (Alternate)
+    COPY_EXISTING ~%nb%.cre~ ~override~
+      PATCH_INCLUDE ~infinityanimations/lib/fj_cre_validity.tpp~
+      PATCH_IF vl BEGIN
+        PATCH_INCLUDE ~infinityanimations/lib/fj_cre_reindex.tpp~
+        WRITE_SHORT 0x28 0x526a //Animation (shadow_small_murky)
+        WRITE_BYTE 0x237 1 //Sex (male)
+        WRITE_BYTE 0x271 4 //General (undead)
+        WRITE_BYTE 0x272 132 //Race (shadow)
+      END
+    BUT_ONLY
+  END
+END
+
+ACTION_FOR_EACH nb IN ~0xuddg~ ~bpskelar~ ~cmapocal~ ~gholske1~ ~hgskl01~ ~lk#xsk1~ ~rskel03~ ~uddoor07~ BEGIN
+  ACTION_IF FILE_EXISTS_IN_GAME ~%nb%.cre~ BEGIN //Large Skeletons
+    COPY_EXISTING ~%nb%.cre~ ~override~
+      PATCH_INCLUDE ~infinityanimations/lib/fj_cre_validity.tpp~
+      PATCH_IF vl BEGIN
+        PATCH_INCLUDE ~infinityanimations/lib/fj_cre_reindex.tpp~
+        WRITE_SHORT 0x28 0xeb00 //Animation (skeleton0)
+        WRITE_BYTE 0x237 4 //Sex (neither)
+        WRITE_BYTE 0x271 4 //General (undead)
+        WRITE_BYTE 0x272 115 //Race (skeleton)
+        READ_BYTE 0x273 cs //Class
+        PATCH_IF cs > 20 BEGIN //If invalid class
+          WRITE_BYTE 0x273 134 //skeleton
+        END
+        READ_BYTE 0x275 gd //Gender
+        PATCH_IF gd != 6 BEGIN //If not summoned
+          WRITE_BYTE 0x275 4 //neither
+        END
+      END
+    BUT_ONLY
+  END
+END
+
+ACTION_FOR_EACH nb IN ~bw05grs1~ ~bw05grs2~ BEGIN
+  ACTION_IF FILE_EXISTS_IN_GAME ~%nb%.cre~ BEGIN //Moon Horrors
+    COPY_EXISTING ~%nb%.cre~ ~override~
+      PATCH_INCLUDE ~infinityanimations/lib/fj_cre_validity.tpp~
+      PATCH_IF vl BEGIN
+        PATCH_INCLUDE ~infinityanimations/lib/fj_cre_reindex.tpp~
+        WRITE_SHORT 0x28 0xeb20 //Animation (skeletonb)
+        WRITE_BYTE 0x272 115 //Race (skeleton)
+      END
+    BUT_ONLY
+  END
+END
+
+ACTION_FOR_EACH nb IN ~cblolth3~ ~hlshyr~ BEGIN
+  ACTION_IF FILE_EXISTS_IN_GAME ~%nb%.cre~ BEGIN //Female Vampires
+    COPY_EXISTING ~%nb%.cre~ ~override~
+      PATCH_INCLUDE ~infinityanimations/lib/fj_cre_validity.tpp~
+      PATCH_IF vl BEGIN
+        PATCH_INCLUDE ~infinityanimations/lib/fj_cre_reindex.tpp~
+        WRITE_SHORT 0x28 0x7f22 //Animation (vampire_female)
+        WRITE_BYTE 0x237 2 //Sex (female)
+        WRITE_BYTE 0x275 2 //Gender (female)
+      END
+    BUT_ONLY
+  END
+END
+
+ACTION_FOR_EACH nb IN ~nevm1~ ~wighcold~ BEGIN
+  ACTION_IF FILE_EXISTS_IN_GAME ~%nb%.cre~ BEGIN //Wights
+    COPY_EXISTING ~%nb%.cre~ ~override~
+      PATCH_INCLUDE ~infinityanimations/lib/fj_cre_validity.tpp~
+      PATCH_IF vl BEGIN
+        PATCH_INCLUDE ~infinityanimations/lib/fj_cre_reindex.tpp~
+        WRITE_SHORT 0x28 0xec00 //Animation (wight_gray)
+        WRITE_BYTE 0x272 108 //Race (ghoul)
+        WRITE_BYTE 0x273 118 //Class (ghoul_ghast)
+      END
+    BUT_ONLY
+  END
+END
+
+ACTION_FOR_EACH nb IN ~d0monty2~ ~zombie01~ BEGIN
+  ACTION_IF FILE_EXISTS_IN_GAME ~%nb%.cre~ BEGIN //Green Zombies
+    COPY_EXISTING ~%nb%.cre~ ~override~
+      PATCH_INCLUDE ~infinityanimations/lib/fj_cre_validity.tpp~
+      PATCH_IF vl BEGIN
+        PATCH_INCLUDE ~infinityanimations/lib/fj_cre_reindex.tpp~
+        WRITE_SHORT 0x28 0xec10 //Animation (wight_green)
+        WRITE_BYTE 0x271 4 //General (undead)
+        WRITE_BYTE 0x272 148 //Race (zombie)
+        WRITE_BYTE 0x273 118 //Class (ghoul_ghast)
+      END
+    BUT_ONLY
+  END
+END
+
+ACTION_FOR_EACH nb IN ~gzombie~ ~kelzomb~ ~ntzombju~ ~rzomb01~ ~szombl01~ ~xszomb1~ ~zombju01~ ~zomblo01~ ~zombsexx~ ~zombx1~ BEGIN
+  ACTION_IF FILE_EXISTS_IN_GAME ~%nb%.cre~ BEGIN //Zombie Lords
+    COPY_EXISTING ~%nb%.cre~ ~override~
+      PATCH_INCLUDE ~infinityanimations/lib/fj_cre_validity.tpp~
+      PATCH_IF vl BEGIN
+        PATCH_INCLUDE ~infinityanimations/lib/fj_cre_reindex.tpp~
+        PATCH_IF (~%SOURCE_RES%~ STRING_EQUAL_CASE ~gzombie~ = 1) BEGIN
+          SAY 0x8 @546 //Greater Zombie (fix botched strref)
+          SAY 0xc @546 //Greater Zombie
+        END
+        WRITE_SHORT 0x28 0xec20 //Animation (wight_yellow)
+        WRITE_BYTE 0x237 1 //Sex (male)
+        WRITE_BYTE 0x271 4 //General (undead)
+        WRITE_BYTE 0x272 148 //Race (zombie)
+        WRITE_BYTE 0x273 163 //Class (vampire)
+      END
+    BUT_ONLY
+  END
+END
+
+ACTION_FOR_EACH nb IN ~0xyhdg~ ~bw05skw1~ ~bw05skw2~ ~cbzomb02~ ~cbzombd2~ ~decre#04~ ~dreadx~ ~%tsu%ichary~ ~%tsk%nightsk~ ~mintskel~ ~skelbadx~ ~trskind1~ ~trskind2~ ~zombigu1~ ~zombigua~ BEGIN
+  ACTION_IF FILE_EXISTS_IN_GAME ~%nb%.cre~ BEGIN //Barrow Wights
+    COPY_EXISTING ~%nb%.cre~ ~override~
+      PATCH_INCLUDE ~infinityanimations/lib/fj_cre_validity.tpp~
+      PATCH_IF vl BEGIN
+        PATCH_INCLUDE ~infinityanimations/lib/fj_cre_reindex.tpp~
+        WRITE_SHORT 0x28 0x528e //Animation (wight_barrow)
+        WRITE_BYTE 0x271 4 //General (undead)
+        WRITE_BYTE 0x272 108 //Race (ghoul)
+        WRITE_BYTE 0x273 118 //Class (ghoul_ghast)
+      END
+    BUT_ONLY
+  END
+END
+
+ACTION_FOR_EACH nb IN ~c#q06002~ ~%tsu%ghorak~ ~nszomb02~ ~nszomb04~ ~nszomb06~ ~nszomb07~ ~nszomb08~ ~nszomb09~ ~nszomb10~ ~x#garz01~ ~x#garz02~ ~x#garz03~ ~x#garz04~ ~%tsu%zombie~ ~%tsz%ombie_a~ ~%tsz%ombie_b~ ~%tsz%ombie_c~ ~%tsz%ombie_d~ ~%tsz%ombie_e~ ~%tsu%zombieb~ ~%tsu%zombiew~ BEGIN
+  ACTION_IF FILE_EXISTS_IN_GAME ~%nb%.cre~ BEGIN //Zombies
+    COPY_EXISTING ~%nb%.cre~ ~override~
+      PATCH_INCLUDE ~infinityanimations/lib/fj_cre_validity.tpp~
+      PATCH_IF vl BEGIN
+        PATCH_INCLUDE ~infinityanimations/lib/fj_cre_reindex.tpp~
+        WRITE_SHORT 0x28 0x7d00 //Animation (zombie)
+        WRITE_BYTE 0x271 4 //General (undead)
+        WRITE_BYTE 0x272 148 //Race (zombie)
+        READ_BYTE 0x273 cs //Class
+        PATCH_IF cs != 155 BEGIN //If not "innocent"
+          WRITE_BYTE 0x273 198 //zombie_normal
+        END
+      END
+    BUT_ONLY
+  END
+END
+
+ACTION_FOR_EACH nb IN ~bhghoul3~ ~bhghoul5~ ~gtcit3~ ~gtcit4~ ~gtcit5~ ~nevm5~ ~nszomb01~ ~nszomb03~ ~nszomb05~ ~ntzombie~ ~%tsu%sewerf2~ BEGIN
+  ACTION_IF FILE_EXISTS_IN_GAME ~%nb%.cre~ BEGIN //Yellow Zombies
+    COPY_EXISTING ~%nb%.cre~ ~override~
+      PATCH_INCLUDE ~infinityanimations/lib/fj_cre_validity.tpp~
+      PATCH_IF vl BEGIN
+        PATCH_INCLUDE ~infinityanimations/lib/fj_cre_reindex.tpp~
+        WRITE_SHORT 0x28 0xee00 //Animation (zombie_yellow_iwd)
+        WRITE_BYTE 0x271 4 //General (undead)
+        WRITE_BYTE 0x272 148 //Race (zombie)
+        WRITE_BYTE 0x273 116 //Class (ghoul)
+      END
+    BUT_ONLY
+  END
+END
+
+ACTION_FOR_EACH nb IN ~lacedo01~ ~lacedo02~ ~sahlace~ BEGIN
+  ACTION_IF FILE_EXISTS_IN_GAME ~%nb%.cre~ BEGIN //Lacedons
+    COPY_EXISTING ~%nb%.cre~ ~override~
+      PATCH_INCLUDE ~infinityanimations/lib/fj_cre_validity.tpp~
+      PATCH_IF vl BEGIN
+        PATCH_INCLUDE ~infinityanimations/lib/fj_cre_reindex.tpp~
+        WRITE_SHORT 0x28 0xee10 //Animation (zombie_blue_iwd)
+      END
+    BUT_ONLY
+  END
+END
+
+ACTION_FOR_EACH nb IN ~sahzom01~ ~sahzomb~ ~va#zom01~ ~va#zom02~ ~va#zom03~ ~va#zomgl~ ~zombse01~ BEGIN
+  ACTION_IF FILE_EXISTS_IN_GAME ~%nb%.cre~ BEGIN //Sea Zombies
+    COPY_EXISTING ~%nb%.cre~ ~override~
+      PATCH_INCLUDE ~infinityanimations/lib/fj_cre_validity.tpp~
+      PATCH_IF vl BEGIN
+        PATCH_INCLUDE ~infinityanimations/lib/fj_cre_reindex.tpp~
+        WRITE_SHORT 0x28 0xee10 //Animation (zombie_blue_iwd)
+        WRITE_BYTE 0x237 1 //Sex (male)
+        WRITE_BYTE 0x271 255 //General (monster)
+        WRITE_BYTE 0x272 148 //Race (zombie)
+        WRITE_BYTE 0x273 135 //Class (skeleton_warrior)
+      END
+    BUT_ONLY
+  END
+END
+VERBOSE
+
+//! Skeleton Warriors ///////////////////////////////////////////////////////
+BEGIN @45 //Barrow Wight animation
+SUBCOMPONENT @43 (MOD_IS_INSTALLED ~setup-infinityanimations.tp2~ 0) //Skeleton Warriors
+DESIGNATED 410
+REQUIRE_COMPONENT ~setup-infinityanimations.tp2~ 0 @26 //This component requires the main component.
+
+ACTION_IF NOT MOD_IS_INSTALLED ~setup-infinityanimations.tp2~ 0 BEGIN
+  FAIL @26 //This component requires the main component.
+END
+OUTER_SET wk = 0x528e //Animation (wight_barrow)
+INCLUDE ~infinityanimations/lib/t-skelwa.tpa~
+
+BEGIN @46 //Skeleton animation
+SUBCOMPONENT @43 (MOD_IS_INSTALLED ~setup-infinityanimations.tp2~ 0) //Skeleton Warriors 
+DESIGNATED 415
+REQUIRE_COMPONENT ~setup-infinityanimations.tp2~ 0 @26 //This component requires the main component.
+
+ACTION_IF NOT MOD_IS_INSTALLED ~setup-infinityanimations.tp2~ 0 BEGIN
+  FAIL @26 //This component requires the main component.
+END
+OUTER_SET wk = 0x6403 //Animation (skeleton)
+INCLUDE ~infinityanimations/lib/t-skelwa.tpa~
+
+BEGIN @47 //SkeletonA animation
+SUBCOMPONENT @43 (MOD_IS_INSTALLED ~setup-infinityanimations.tp2~ 0) //Skeleton Warriors
+DESIGNATED 420
+REQUIRE_COMPONENT ~setup-infinityanimations.tp2~ 0 @26 //This component requires the main component.
+
+ACTION_IF NOT MOD_IS_INSTALLED ~setup-infinityanimations.tp2~ 0 BEGIN
+  FAIL @26 //This component requires the main component.
+END
+OUTER_SET wk = 0xeb10 //Animation (skeletona)
+INCLUDE ~infinityanimations/lib/t-skelwa.tpa~
+
+//! Seer Animation //////////////////////////////////////////////////////////
+BEGIN @49 //Some beggars and slaves
+SUBCOMPONENT @48 (MOD_IS_INSTALLED ~setup-infinityanimations.tp2~ 0) //Seer Animation
+DESIGNATED 450
+REQUIRE_COMPONENT ~setup-infinityanimations.tp2~ 0 @26 //This component requires the main component.
+
+
+ACTION_IF NOT MOD_IS_INSTALLED ~setup-infinityanimations.tp2~ 0 BEGIN
+  FAIL @26 //This component requires the main component.
+END
+
+ACTION_FOR_EACH nb IN ~amman04~ ~antti~ ~arenab1~ ~arlaxbe1~ ~arnman01~ ~arnman02~ ~bbegg1~ ~%tsb%egbax_a~ ~%tsb%egbax_b~ ~%tsb%egbax_c~ ~%tsb%egbax_d~ ~beggar1~ ~beggar2~ ~%tsu%beggba~ ~%tsu%beggbax~ ~%tsu%beggna~ ~bhpriska~ ~cb3566p1~ ~cb4270dw~ ~cbhld0ma~ ~dbeggar~ ~dbeggar2~ ~ddvagabo~ ~dmstore~ ~drpar2~ ~drpar3~ ~drpar4~ ~drpar5~ ~drpar6~ ~gbegg01~ ~gphil01~ ~hermit~ ~ilbegg01~ ~j#im8grd~ ~kpfarm04~ ~lout~ ~maeguy01~ ~murdbegg~ ~ntutor~ ~ntutor1~ ~pirbob01~ ~pkagalb~ ~%tsu%portal~ ~%tsu%priilmu~ ~pspeas1~ ~riftm02~ ~sassar~ ~sethle~ ~slslav01~ ~udilsla1~ ~udilsla3~ ~udslv02~ ~udvicti2~ ~udvicti3~ ~udvicti4~ ~udvictim~ BEGIN
+  ACTION_IF FILE_EXISTS_IN_GAME ~%nb%.cre~ BEGIN //Beggars
+    RANDOM_SEED null //Initialize random numbers
+    OUTER_SET rgs = RANDOM(1 2)
+    INCLUDE ~infinityanimations/lib/t-seer.tpa~
+  END
+END
+
+BEGIN @50 //Some beggars
+SUBCOMPONENT @48 (MOD_IS_INSTALLED ~setup-infinityanimations.tp2~ 0) //Seer Animation
+DESIGNATED 455
+REQUIRE_COMPONENT ~setup-infinityanimations.tp2~ 0 @26 //This component requires the main component.
+
+ACTION_IF NOT MOD_IS_INSTALLED ~setup-infinityanimations.tp2~ 0 BEGIN
+  FAIL @26 //This component requires the main component.
+END
+
+ACTION_FOR_EACH nb IN ~amman04~ ~antti~ ~arenab1~ ~arlaxbe1~ ~arnman01~ ~arnman02~ ~bbegg1~ ~%tsb%egbax_a~ ~%tsb%egbax_b~ ~%tsb%egbax_c~ ~%tsb%egbax_d~ ~beggar1~ ~beggar2~ ~%tsu%beggba~ ~%tsu%beggbax~ ~%tsu%beggna~ ~bhpriska~ ~cb3566p1~ ~cb4270dw~ ~cbhld0ma~ ~dbeggar~ ~dbeggar2~ ~ddvagabo~ ~dmstore~ ~drpar2~ ~drpar3~ ~drpar4~ ~drpar5~ ~drpar6~ ~gbegg01~ ~gphil01~ ~hermit~ ~ilbegg01~ ~j#im8grd~ ~kpfarm04~ ~lout~ ~maeguy01~ ~murdbegg~ ~ntutor~ ~ntutor1~ ~pirbob01~ ~pkagalb~ ~%tsu%portal~ ~%tsu%priilmu~ ~pspeas1~ ~riftm02~ ~sassar~ ~sethle~ ~slslav01~ ~udilsla1~ ~udilsla3~ ~udslv02~ ~udvicti2~ ~udvicti3~ ~udvicti4~ ~udvictim~ ~acqxmin1~ ~acqxmin2~ ~acqxmin3~ ~acqxmin4~ ~acqxmin5~ ~acqxmine~ ~andars~ ~%tsu%beldin~ ~%tsu%bob~ ~%tsu%cantic~ ~%tsu%cory~ ~deadman4~ ~%tsu%dilak~ ~%tsu%dink~ ~%tsu%faber~ ~%tsu%gord~ ~%tsu%jamie~ ~%tsu%kylee~ ~%tsu%lesley~ ~%tsu%marvin~ ~%tsu%minec2~ ~%tsu%minec3~ ~%tsu%minec4~ ~%tsu%minec5~ ~%tsu%minerc~ ~%tsu%minern~ ~ntslavex~ ~%tsu%phaers~ ~pris02~ ~%tsu%prison~ ~%tsu%ruffie~ ~sarpris2~ ~sewerm~ ~sewerm1~ ~%tsu%shvert~ ~%tsu%slave~ ~%tsu%slave4~ ~%tsu%slave5~ ~%tsu%slave6~ ~%tss%lavfree~ ~%tss%lavlead~ ~%tss%lavtell~ ~%tsu%tipian~ ~va#prisn~ BEGIN
+  ACTION_IF FILE_EXISTS_IN_GAME ~%nb%.cre~ BEGIN //Beggars and slaves
+    RANDOM_SEED null //Initialize random numbers
+    OUTER_SET rgs = RANDOM(1 2)
+    INCLUDE ~infinityanimations/lib/t-seer.tpa~
+  END
+END
+
+BEGIN @51 //Some slaves
+SUBCOMPONENT @48 (MOD_IS_INSTALLED ~setup-infinityanimations.tp2~ 0) //Seer Animation
+DESIGNATED 460
+REQUIRE_COMPONENT ~setup-infinityanimations.tp2~ 0 @26 //This component requires the main component.
+
+ACTION_IF NOT MOD_IS_INSTALLED ~setup-infinityanimations.tp2~ 0 BEGIN
+  FAIL @26 //This component requires the main component.
+END
+
+ACTION_FOR_EACH nb IN ~acqxmin1~ ~acqxmin2~ ~acqxmin3~ ~acqxmin4~ ~acqxmin5~ ~acqxmine~ ~andars~ ~%tsu%beldin~ ~%tsu%bob~ ~%tsu%cantic~ ~%tsu%cory~ ~deadman4~ ~%tsu%dilak~ ~%tsu%dink~ ~%tsu%faber~ ~%tsu%gord~ ~%tsu%jamie~ ~%tsu%kylee~ ~%tsu%lesley~ ~%tsu%marvin~ ~%tsu%minec2~ ~%tsu%minec3~ ~%tsu%minec4~ ~%tsu%minec5~ ~%tsu%minerc~ ~%tsu%minern~ ~ntslavex~ ~%tsu%phaers~ ~pris02~ ~%tsu%prison~ ~%tsu%ruffie~ ~sarpris2~ ~sewerm~ ~sewerm1~ ~%tsu%shvert~ ~%tsu%slave~ ~%tsu%slave4~ ~%tsu%slave5~ ~%tsu%slave6~ ~%tss%lavfree~ ~%tss%lavlead~ ~%tss%lavtell~ ~%tsu%tipian~ ~va#prisn~ BEGIN
+  ACTION_IF FILE_EXISTS_IN_GAME ~%nb%.cre~ BEGIN //Slaves
+    RANDOM_SEED null //Initialize random numbers
+    OUTER_SET rgs = RANDOM(1 2)
+    INCLUDE ~infinityanimations/lib/t-seer.tpa~
+  END
+END
+
+//! Svirfneblin Animations //////////////////////////////////////////////////
+BEGIN @55 //Animations only
+SUBCOMPONENT @52 (MOD_IS_INSTALLED ~setup-infinityanimations.tp2~ 0) //Svirfneblin Animations
+DESIGNATED 480
+REQUIRE_COMPONENT ~setup-infinityanimations.tp2~ 0 @26 //This component requires the main component.
+FORBID_COMPONENT ~setup-aurora.tp2~ 0 @53 //Aurora's Shoes has already installed this.
+
+ACTION_IF NOT MOD_IS_INSTALLED ~setup-infinityanimations.tp2~ 0 BEGIN
+  FAIL @26 //This component requires the main component.
+END
+
+ACTION_IF MOD_IS_INSTALLED ~setup-aurora.tp2~ 0 BEGIN
+  FAIL @53 //Aurora's Shoes has already installed this.
+END
+
+COPY_EXISTING ~udsvir04.cre~ ~override~ //Innkeeper
+              ~udsvir07.cre~ ~override~ //Svirfneblin
+  PATCH_IF SOURCE_SIZE > 0x2d3 BEGIN
+    WRITE_SHORT 0x28 0x5263 //Animation (svirfneblin_pale_axe)
+    WRITE_BYTE 0x2f 84 //Skin color (peach, was 7 light metallic green)
+    WRITE_BYTE 0x32 84 //Hair color (peach, was 109 terracotta)
+    WRITE_BYTE 0x272 6 //Race (gnome, was 4 dwarf)
+  END
+BUT_ONLY
+
+COPY_EXISTING ~udsvdead.cre~ ~override~ //Svirfneblin (Dead)
+              ~udsvir03.cre~ ~override~ //Goldander Blackenrock
+  PATCH_IF SOURCE_SIZE > 0x2d3 BEGIN
+    WRITE_SHORT 0x28 0x5264 //Animation (svirfneblin_pale_noaxe)
+    WRITE_BYTE 0x2d 18 //Minor color (dark blue, was 47 pure dark red)
+    WRITE_BYTE 0x2f 84 //Skin color (peach, was 7 light metallic green)
+    WRITE_BYTE 0x32 84 //Hair color (peach, was 109 terracotta)
+    WRITE_BYTE 0x275 1 //Gender (male, was 4 neither)
+  END
+BUT_ONLY
+
+COPY_EXISTING ~udsvir01.cre~ ~override~ //Odendal Breachgnome
+              ~udsvir02.cre~ ~override~ //Svirfneblin
+              ~udsvir08.cre~ ~override~ //Svirfneblin Leader
+  PATCH_IF SOURCE_SIZE > 0x2d3 BEGIN
+    WRITE_SHORT 0x28 0x5265 //Animation (svirfneblin_dark_axe)
+    WRITE_BYTE 0x2f 38 //Skin color (light dirt brown, was 7 light metallic green)
+    WRITE_BYTE 0x32 38 //Hair color (light dirt brown, was 7 light metallic green)
+    WRITE_BYTE 0x272 6 //Race (gnome, was 4 dwarf)
+  END
+BUT_ONLY
+
+COPY_EXISTING ~udsvir05.cre~ ~override~ //Therndle Daglefodd
+              ~udsvir06.cre~ ~override~ //Svirfneblin
+  PATCH_IF SOURCE_SIZE > 0x2d3 BEGIN
+    WRITE_SHORT 0x28 0x5266 //Animation (svirfneblin_dark_noaxe)
+    WRITE_BYTE 0x2f 38 //Skin color (light dirt brown, was 7 light metallic green)
+    WRITE_BYTE 0x32 5 //Hair color (light silver, was 109 terracotta)
+  END
+BUT_ONLY
+
+BEGIN @56 //Animations and sounds
+SUBCOMPONENT @52 (MOD_IS_INSTALLED ~setup-infinityanimations.tp2~ 0) //Svirfneblin Animations
+DESIGNATED 490
+REQUIRE_COMPONENT ~setup-infinityanimations.tp2~ 0 @26 //This component requires the main component.
+FORBID_COMPONENT ~setup-aurora.tp2~ 0 @53 //Aurora's Shoes has already installed this.
+
+ACTION_IF NOT MOD_IS_INSTALLED ~setup-infinityanimations.tp2~ 0 BEGIN
+  FAIL @26 //This component requires the main component.
+END
+
+ACTION_IF MOD_IS_INSTALLED ~setup-aurora.tp2~ 0 BEGIN
+  FAIL @53 //Aurora's Shoes has already installed this.
+END
+
+COPY_EXISTING ~udsvir04.cre~ ~override~ //Innkeeper
+              ~udsvir07.cre~ ~override~ //Svirfneblin
+  PATCH_IF SOURCE_SIZE > 0x2d3 BEGIN
+    WRITE_SHORT 0x28 0x5263 //Animation (svirfneblin_pale_axe)
+    WRITE_BYTE 0x2f 84 //Skin color (peach, was 7 light metallic green)
+    WRITE_BYTE 0x32 84 //Hair color (peach, was 109 terracotta)
+    WRITE_BYTE 0x272 6 //Race (gnome, was 4 dwarf)
+    SAY INITIAL_MEETING @547 //Yes. [T-SVA01B]
+    SAY MORALE @548 //Help! Help! [T-SVA03B]
+    SAY UNHAPPY_BREAKING_POINT @548 //Help! Help! [T-SVA03B]
+    SAY BATTLE_CRY1 @549 //My powers shall obliterate you! [T-SVA02C]
+    SAY BATTLE_CRY2 @550 //Die! [T_SVA02D]
+    SAY ATTACK1 ~~ [T-SVA04B]
+    SAY DAMAGE ~~ [T-SVA05B]
+    SAY DYING ~~ [T-SVA06B]
+    SAY HURT @551 //I am wounded! Heal me! [T-SVA07]
+    SAY SELECT_COMMON1 @552 //Good day! [T-SVA01A]
+    SAY SELECT_COMMON2 @547 //Yes. [T-SVA01B]
+    SAY SELECT_COMMON3 @553 //I really need to talk to you. [T-SVA01C]
+    SAY SELECT_COMMON4 @554 //Ho ha ha ha! [T-SVA01D]
+    SAY DIALOGUE_HOSTILE @555 //You're in GREAT peril if you bother me. Just you wait! [T-SVA08]
+    SAY CRITICAL_HIT @556 //That's the way it's done and done! [T-SVA09]
+    SAY CRITICAL_MISS @557 //No... [T-SVA10]
+    SAY SPELL_DISRUPTED @557 //No... [T-SVA10]
+  END
+BUT_ONLY
+
+COPY_EXISTING ~udsvdead.cre~ ~override~ //Svirfneblin (Dead)
+              ~udsvir03.cre~ ~override~ //Goldander Blackenrock
+  PATCH_IF SOURCE_SIZE > 0x2d3 BEGIN
+    WRITE_SHORT 0x28 0x5264 //Animation (svirfneblin_pale_noaxe)
+    WRITE_BYTE 0x2d 18 //Minor color (dark blue, was 47 pure dark red)
+    WRITE_BYTE 0x2f 84 //Skin color (peach, was 7 light metallic green)
+    WRITE_BYTE 0x32 84 //Hair color (peach, was 109 terracotta)
+    WRITE_BYTE 0x275 1 //Gender (male, was 4 neither)
+    SAY INITIAL_MEETING @558 //Come and talk a while. [T-SVN01C]
+    SAY MORALE @559 //Please help me! [T-SVN03B]
+    SAY UNHAPPY_BREAKING_POINT @559 //Please help me! [T-SVN03B]
+    SAY BATTLE_CRY1 @560 //Take that! [T-SVN02C]
+    SAY BATTLE_CRY2 @561 //Evil fall before me! [T_SVN02D]
+    SAY ATTACK1 ~~ [T-SVN04B]
+    SAY DAMAGE ~~ [T-SVN05B]
+    SAY DYING ~~ [T-SVN06B]
+    SAY HURT @562 //I am hurt!~ [T-SVN07]
+    SAY SELECT_COMMON1 @563 //Hello there. [T-SVN01A]
+    SAY SELECT_COMMON2 @564 //Yes. [T-SVN01B]
+    SAY SELECT_COMMON3 @558 //Come and talk a while. [T-SVN01C]
+    SAY SELECT_COMMON4 @565 //Oh ho ho ho! [T-SVN01D]
+    SAY DIALOGUE_HOSTILE @566 //You're heading for a good beating, you are! [T-SVN08]
+    SAY CRITICAL_HIT @567 //Well look at that! [T-SVN09]
+    SAY CRITICAL_MISS @568 //No... [T-SVN10]
+    SAY SPELL_DISRUPTED @568 //No... [T-SVN10]
+  END
+BUT_ONLY
+
+COPY_EXISTING ~udsvir01.cre~ ~override~ //Odendal Breachgnome
+              ~udsvir02.cre~ ~override~ //Svirfneblin
+              ~udsvir08.cre~ ~override~ //Svirfneblin Leader
+  PATCH_IF SOURCE_SIZE > 0x2d3 BEGIN
+    WRITE_SHORT 0x28 0x5265 //Animation (svirfneblin_dark_axe)
+    WRITE_BYTE 0x2f 38 //Skin color (light dirt brown, was 7 light metallic green)
+    WRITE_BYTE 0x32 38 //Hair color (light dirt brown, was 7 light metallic green)
+    WRITE_BYTE 0x272 6 //Race (gnome, was 4 dwarf)
+    SAY INITIAL_MEETING @552 //Good day! [T-SVA01A]
+    SAY MORALE @569 //So long! [T-SVA03A]
+    SAY UNHAPPY_BREAKING_POINT @569 //So long! [T-SVA03A]
+    SAY BATTLE_CRY1 @570 //Kill that scum! Get 'em good! [T-SVA02A]
+    SAY BATTLE_CRY2 @571 //Blood and bloody hell! [T_SVA02B]
+    SAY ATTACK1 ~~ [T-SVA04A]
+    SAY DAMAGE ~~ [T-SVA05A]
+    SAY DYING ~~ [T-SVA06A]
+    SAY HURT @551 //I am wounded! Heal me! [T-SVA07]
+    SAY SELECT_COMMON1 @552 //Good day! [T-SVA01A]
+    SAY SELECT_COMMON2 @547 //Yes. [T-SVA01B]
+    SAY SELECT_COMMON3 @553 //I really need to talk to you. [T-SVA01C]
+    SAY SELECT_COMMON4 @554 //Ho ha ha ha! [T-SVA01D]
+    SAY DIALOGUE_HOSTILE @555 //You're in GREAT peril if you bother me. Just you wait! [T-SVA08]
+    SAY CRITICAL_HIT @556 //That's the way it's done and done! [T-SVA09]
+    SAY CRITICAL_MISS @557 //No... [T-SVA10]
+    SAY SPELL_DISRUPTED @557 //No... [T-SVA10]
+  END
+BUT_ONLY
+
+COPY_EXISTING ~udsvir05.cre~ ~override~ //Therndle Daglefodd
+              ~udsvir06.cre~ ~override~ //Svirfneblin
+  PATCH_IF SOURCE_SIZE > 0x2d3 BEGIN
+    WRITE_SHORT 0x28 0x5266 //Animation (svirfneblin_dark_noaxe)
+    WRITE_BYTE 0x2f 38 //Skin color (light dirt brown, was 7 light metallic green)
+    WRITE_BYTE 0x32 5 //Hair color (light silver, was 109 terracotta)
+    SAY INITIAL_MEETING @563 //Hello there. [T-SVN01A]
+    SAY MORALE @572 //Farewell. [T-SVN03A]
+    SAY UNHAPPY_BREAKING_POINT @572 //Farewell. [T-SVN03A]
+    SAY BATTLE_CRY1 @573 //Get 'em! [T-SVN02A]
+    SAY BATTLE_CRY2 @574 //I will cut you down to size! [T_SVN02B]
+    SAY ATTACK1 ~~ [T-SVN04A]
+    SAY DAMAGE ~~ [T-SVN05A]
+    SAY DYING ~~ [T-SVN06A]
+    SAY HURT @562 //I am hurt! [T-SVN07]
+    SAY SELECT_COMMON1 @563 //Hello there. [T-SVN01A]
+    SAY SELECT_COMMON2 @564 //Yes. [T-SVN01B]
+    SAY SELECT_COMMON3 @558 //Come and talk a while. [T-SVN01C]
+    SAY SELECT_COMMON4 @565 //Oh ho ho ho! [T-SVN01D]
+    SAY DIALOGUE_HOSTILE @566 //You're heading for a good beating, you are! [T-SVN08]
+    SAY CRITICAL_HIT @567 //Well look at that! [T-SVN09]
+    SAY CRITICAL_MISS @568 //No... [T-SVN10]
+    SAY SPELL_DISRUPTED @568 //No... [T-SVN10]
+  END
+BUT_ONLY
+
+//! More Base Animations ////////////////////////////////////////////////////
+BEGIN @57 //More Base Animations
+DESIGNATED 500
+REQUIRE_COMPONENT ~setup-infinityanimations.tp2~ 0 @26 //This component requires the main component.
+
+ACTION_IF NOT MOD_IS_INSTALLED ~setup-infinityanimations.tp2~ 0 BEGIN
+  FAIL @26 //This component requires the main component.
+END
+
+SILENT
+ACTION_FOR_EACH nb IN ~histach1~ ~histach2~ ~histach3~ ~histach4~ ~histach5~ ~histach6~ ~histach7~ ~histach8~ ~histachi~ BEGIN
+  ACTION_IF FILE_EXISTS_IN_GAME ~%nb%.cre~ BEGIN //Histachii
+    COPY_EXISTING ~%nb%.cre~ ~override~
+      PATCH_INCLUDE ~infinityanimations/lib/fj_cre_validity.tpp~
+      PATCH_IF vl BEGIN
+        PATCH_INCLUDE ~infinityanimations/lib/fj_cre_reindex.tpp~
+        WRITE_SHORT 0x28 0xe040 //Animation (histachii)
+        WRITE_BYTE 0x271 1 //General (humanoid)
+        WRITE_BYTE 0x272 154 //Race (yuanti)
+        WRITE_BYTE 0x273 2 //Class (fighter)
+      END
+    BUT_ONLY
+  END
+END
+
+ACTION_FOR_EACH nb IN ~bazliz03~ ~bhlizgrd~ ~bplizgrd~ ~bplizman~ ~icliz01~ ~icliz03~ ~icliz04~ ~icliz05~ ~icliz06~ ~icliz07~ ~lizdead~ BEGIN
+  ACTION_IF FILE_EXISTS_IN_GAME ~%nb%.cre~ BEGIN //Lizardmen Brown
+    COPY_EXISTING ~%nb%.cre~ ~override~
+      PATCH_INCLUDE ~infinityanimations/lib/fj_cre_validity.tpp~
+      PATCH_IF vl BEGIN
+        PATCH_INCLUDE ~infinityanimations/lib/fj_cre_reindex.tpp~
+        WRITE_SHORT 0x28 0xe500 //Animation (lizardman_brown)
+        WRITE_BYTE 0x2f 114 //Skin color (yet another brown)
+        WRITE_BYTE 0x237 1 //Sex (male)
+        WRITE_BYTE 0x272 154 //Race (lizardman)
+      END
+    BUT_ONLY
+  END
+END
+
+ACTION_FOR_EACH nb IN ~bazliz01~ ~bazliz02~ ~bhlizsha~ ~bplizsha~ ~dw#lzsh1~ ~dw#lzsh2~ ~va#lizrd~ BEGIN
+  ACTION_IF FILE_EXISTS_IN_GAME ~%nb%.cre~ BEGIN //Lizardman Shamans
+    COPY_EXISTING ~%nb%.cre~ ~override~
+      PATCH_INCLUDE ~infinityanimations/lib/fj_cre_validity.tpp~
+      PATCH_IF vl BEGIN
+        PATCH_INCLUDE ~infinityanimations/lib/fj_cre_reindex.tpp~
+        WRITE_SHORT 0x28 0xe510 //Animation (lizardman_green)
+        WRITE_BYTE 0x2f 53 //Skin color (green)
+        WRITE_BYTE 0x237 1 //Sex (male)
+        WRITE_BYTE 0x271 1 //General (humanoid)
+        WRITE_BYTE 0x272 154 //Race (lizardman)
+        WRITE_BYTE 0x273 14 //Class (cleric_mage)
+      END
+    BUT_ONLY
+  END
+END
+
+ACTION_FOR_EACH nb IN ~bazliz04~ ~bhlizkng~ ~bplizkng~ ~lizking~ BEGIN
+  ACTION_IF FILE_EXISTS_IN_GAME ~%nb%.cre~ BEGIN //Lizardman Kings
+    COPY_EXISTING ~%nb%.cre~ ~override~
+      PATCH_INCLUDE ~infinityanimations/lib/fj_cre_validity.tpp~
+      PATCH_IF vl BEGIN
+        PATCH_INCLUDE ~infinityanimations/lib/fj_cre_reindex.tpp~
+        WRITE_SHORT 0x28 0xe520 //Animation (lizard_king)
+        WRITE_BYTE 0x2f 36 //Skin color (light dirty yellow)
+        WRITE_BYTE 0x237 1 //Sex (male)
+        WRITE_BYTE 0x271 1 //General (humanoid)
+        WRITE_BYTE 0x272 154 //Race (lizardman)
+        WRITE_BYTE 0x275 1 //Gender (male)
+      END
+    BUT_ONLY
+  END
+END
+
+ACTION_FOR_EACH nb IN ~bptrol01~ ~bptrsi01~ ~bptrsn01~ ~cb351tgd~ ~cdtroll1~ ~cdtroll2~ ~chaltrol~ ~clfteg~ ~clftrl~ ~datroll~ ~ddtroll1~ ~ddtroll2~ ~dgtrol01~ ~dgtrol02~ ~drshnl01~ ~drshnl02~ ~drshnl11~ ~drshnl21~ ~dw#trlde~ ~dw#trlgi~ ~dw#trlhg~ ~eletro01~ ~eletro02~ ~eletro03~ ~firamb03~ ~firamb05~ ~firtrl01~ ~godtrol1~ ~godtrol2~ ~grae~ ~hgtrl01~ ~hgtrl02~ ~kptrol01~ ~kptrol02~ ~kptrol03~ ~kptrol04~ ~kptrol05~ ~kptrol13~ ~kptrol23~ ~mygtrol~ ~plytroll~ ~quadtol1~ ~r#troll~ ~shtroll~ ~sutroll~ ~sutroll2~ ~torgal~ ~torgal2~ ~torgal3~ ~trolde01~ ~trolde02~ ~trolfr01~ ~trolgi01~ ~trolgi02~ ~troll01~ ~troll02~ ~trollens~ ~troluo01~ BEGIN
+  ACTION_IF FILE_EXISTS_IN_GAME ~%nb%.cre~ BEGIN //Trolls
+    COPY_EXISTING ~%nb%.cre~ ~override~
+      PATCH_INCLUDE ~infinityanimations/lib/fj_cre_validity.tpp~
+      PATCH_IF vl BEGIN
+        PATCH_INCLUDE ~infinityanimations/lib/fj_cre_reindex.tpp~
+        WRITE_SHORT 0x28 0x7f00 //Animation (troll)
+        WRITE_BYTE 0x2f 86 //Skin color (swamp green)
+        WRITE_BYTE 0x237 1 //Sex (male)
+        WRITE_BYTE 0x271 5 //General (gianthumanoid)
+        WRITE_BYTE 0x275 1 //Gender (male)
+      END
+    BUT_ONLY
+  END
+END
+
+ACTION_FOR_EACH nb IN ~bptrsp01~ ~daspitro~ ~dw#trlse~ ~dw#trlsi~ ~dw#trlsp~ ~godtrol3~ ~godtrol4~ ~pptroll1~ ~pptroll2~ ~rogtro01~ ~rogtro02~ ~trolca01~ ~trolca02~ ~trolfo02~ ~trolfosu~ ~trolsi01~ ~trolsi02~ ~trolsp01~ ~trolsp02~ BEGIN
+  ACTION_IF FILE_EXISTS_IN_GAME ~%nb%.cre~ BEGIN //Blue Trolls
+    COPY_EXISTING ~%nb%.cre~ ~override~
+      PATCH_INCLUDE ~infinityanimations/lib/fj_cre_validity.tpp~
+      PATCH_IF vl BEGIN
+        PATCH_INCLUDE ~infinityanimations/lib/fj_cre_reindex.tpp~
+        WRITE_SHORT 0x28 0xe0b0 //Animation (troll_blue)
+        WRITE_BYTE 0x2f 32 //Skin color (dark sea green)
+        READ_BYTE 0x237 sx //Sex
+        PATCH_IF sx != 2 BEGIN //If not female
+          WRITE_BYTE 0x237 1 //male
+        END
+        READ_BYTE 0x271 gn //General
+        PATCH_IF gn != 4 BEGIN //If not undead
+          WRITE_BYTE 0x271 5 //General (gianthumanoid)
+        END
+        READ_BYTE 0x275 gd //Gender
+        PATCH_IF (gd != 2) AND (gd != 6) BEGIN //If not female and not summoned
+          WRITE_BYTE 0x275 1 //male
+        END
+      END
+    BUT_ONLY
+  END
+END
+
+ACTION_FOR_EACH nb IN ~dw#trlic~ ~icetrlx2~ ~icetrlz2~ ~icetrolx~ ~icetrolz~ ~trolic01~ ~trolic02~ ~trolicd2~ ~trolicdd~ BEGIN
+  ACTION_IF FILE_EXISTS_IN_GAME ~%nb%.cre~ BEGIN //Ice Trolls
+    COPY_EXISTING ~%nb%.cre~ ~override~
+      PATCH_INCLUDE ~infinityanimations/lib/fj_cre_validity.tpp~
+      PATCH_IF vl BEGIN
+        PATCH_INCLUDE ~infinityanimations/lib/fj_cre_reindex.tpp~
+        WRITE_SHORT 0x28 0xe0a0 //Animation (troll_ice)
+        WRITE_BYTE 0x2f 71 //Skin color (frost blue)
+        WRITE_BYTE 0x271 5 //General (gianthumanoid)
+        WRITE_BYTE 0x275 1 //Gender (male)
+      END
+    BUT_ONLY
+  END
+END
+
+ACTION_FOR_EACH nb IN ~dw#trl01~ ~dw#trlfr~ ~dw#trlsm~ ~glbear~ ~kptrol06~ ~trolfr02~ ~troll03~ ~trollsm2~ ~wwtrol1~ ~wwtrol2~ ~wwtrol3~ BEGIN
+  ACTION_IF FILE_EXISTS_IN_GAME ~%nb%.cre~ BEGIN //Small Trolls
+    COPY_EXISTING ~%nb%.cre~ ~override~
+      PATCH_INCLUDE ~infinityanimations/lib/fj_cre_validity.tpp~
+      PATCH_IF vl BEGIN
+        PATCH_INCLUDE ~infinityanimations/lib/fj_cre_reindex.tpp~
+        WRITE_SHORT 0x28 0x7f0f //Animation (troll_small)
+        WRITE_BYTE 0x2f 86 //Skin color (swamp green)
+        WRITE_BYTE 0x271 1 //General (humanoid)
+        WRITE_BYTE 0x275 1 //Gender (male)
+      END
+    BUT_ONLY
+  END
+END
+
+ACTION_FOR_EACH nb IN ~dw#trlbl~ ~dw#trlsn~ ~obsice01~ ~obsice11~ ~trolic03~ ~trolic04~ ~trolsn01~ ~trolsn02~ BEGIN
+  ACTION_IF FILE_EXISTS_IN_GAME ~%nb%.cre~ BEGIN //Snow Trolls
+    COPY_EXISTING ~%nb%.cre~ ~override~
+      PATCH_INCLUDE ~infinityanimations/lib/fj_cre_validity.tpp~
+      PATCH_IF vl BEGIN
+        PATCH_INCLUDE ~infinityanimations/lib/fj_cre_reindex.tpp~
+        WRITE_SHORT 0x28 0xe0c0 //Animation (troll_snow)
+        WRITE_BYTE 0x2f 105 //Skin color (off white)
+        WRITE_BYTE 0x271 5 //General (gianthumanoid)
+        WRITE_BYTE 0x275 1 //Gender (male)
+        LAUNCH_PATCH_FUNCTION DELETE_CRE_EFFECT
+          INT_VAR opcode_to_delete = 52 //Very bright by RGB
+        END
+      END
+    BUT_ONLY
+  END
+END
+
+ACTION_FOR_EACH nb IN ~amumber~ ~bpumber~ ~daumber~ ~holyumb~ ~kpumb01~ ~udill02~ ~udumb02~ ~udumber~ ~umbcali1~ ~umbcali2~ ~umbcali3~ ~umbcali4~ ~umbcali5~ ~umbhul01~ BEGIN
+  ACTION_IF FILE_EXISTS_IN_GAME ~%nb%.cre~ BEGIN //Umber Hulks
+    COPY_EXISTING ~%nb%.cre~ ~override~
+      PATCH_INCLUDE ~infinityanimations/lib/fj_cre_validity.tpp~
+      PATCH_IF vl BEGIN
+        PATCH_INCLUDE ~infinityanimations/lib/fj_cre_reindex.tpp~
+        WRITE_SHORT 0x28 0x7f11 //Animation (umber_hulk)
+        WRITE_BYTE 0x237 1 //male
+        READ_BYTE 0x275 gd //Gender
+        PATCH_IF gd != 6 BEGIN //If not summoned
+          WRITE_BYTE 0x275 1 //male
+        END
+      END
+    BUT_ONLY
+  END
+END
+
+ACTION_FOR_EACH nb IN ~choyol~ ~chuyol~ ~ppumb02~ ~r#umber~ ~umbhul02~ BEGIN
+  ACTION_IF FILE_EXISTS_IN_GAME ~%nb%.cre~ BEGIN //Umber Hulks IWD
+    COPY_EXISTING ~%nb%.cre~ ~override~
+      PATCH_INCLUDE ~infinityanimations/lib/fj_cre_validity.tpp~
+      PATCH_IF vl BEGIN
+        PATCH_INCLUDE ~infinityanimations/lib/fj_cre_reindex.tpp~
+        WRITE_SHORT 0x28 0x7f11 //Animation (umberhulk_iwd)
+        WRITE_BYTE 0x237 1 //male
+        READ_BYTE 0x275 gd //Gender
+        PATCH_IF gd != 6 BEGIN //If not summoned
+          WRITE_BYTE 0x275 1 //male
+        END
+      END
+    BUT_ONLY
+  END
+END
+VERBOSE
+
+//! More Icewind Dale Animations ////////////////////////////////////////////
+BEGIN @59 //More Icewind Dale Animations
+DESIGNATED 550
+REQUIRE_COMPONENT ~setup-infinityanimations.tp2~ 0 @26 //This component requires the main component.
+
+ACTION_IF NOT MOD_IS_INSTALLED ~setup-infinityanimations.tp2~ 0 BEGIN
+  FAIL @26 //This component requires the main component.
+END
+
+SILENT
+ACTION_FOR_EACH nb IN ~gorgua04~ ~gorgua05~ ~walkarm2~ BEGIN
+  ACTION_IF FILE_EXISTS_IN_GAME ~%nb%.cre~ BEGIN //Animated Plate Bronze
+    COPY_EXISTING ~%nb%.cre~ ~override~
+      PATCH_INCLUDE ~infinityanimations/lib/fj_cre_validity.tpp~
+      PATCH_IF vl BEGIN
+        PATCH_INCLUDE ~infinityanimations/lib/fj_cre_reindex.tpp~
+        WRITE_SHORT 0x28 0x5279 //Animation (animated_plate_bronze)
+        WRITE_BYTE 0x271 255 //General (monster)
+        WRITE_BYTE 0x272 144 //Race (golem)
+      END
+    BUT_ONLY
+  END
+END
+
+ACTION_FOR_EACH nb IN ~f_demwar~ ~pspnight~ BEGIN
+  ACTION_IF FILE_EXISTS_IN_GAME ~%nb%.cre~ BEGIN //Animated Plate Dark
+    COPY_EXISTING ~%nb%.cre~ ~override~
+      PATCH_INCLUDE ~infinityanimations/lib/fj_cre_validity.tpp~
+      PATCH_IF vl BEGIN
+        PATCH_INCLUDE ~infinityanimations/lib/fj_cre_reindex.tpp~
+        WRITE_SHORT 0x28 0x527a //Animation (animated_plate_dark)
+        WRITE_BYTE 0x271 255 //General (monster)
+        WRITE_BYTE 0x272 121 //Race (fiend)
+        WRITE_BYTE 0x273 160 //Class (tanar'ri)
+      END
+    BUT_ONLY
+  END
+END
+
+ACTION_FOR_EACH nb IN ~walkarm1~ ~walkarm3~ BEGIN
+  ACTION_IF FILE_EXISTS_IN_GAME ~%nb%.cre~ BEGIN //Animated Plate Green
+    COPY_EXISTING ~%nb%.cre~ ~override~
+      PATCH_INCLUDE ~infinityanimations/lib/fj_cre_validity.tpp~
+      PATCH_IF vl BEGIN
+        PATCH_INCLUDE ~infinityanimations/lib/fj_cre_reindex.tpp~
+        WRITE_SHORT 0x28 0x527b //Animation (animated_plate_green)
+        WRITE_BYTE 0x271 255 //General (monster)
+        WRITE_BYTE 0x272 144 //Race (golem)
+      END
+    BUT_ONLY
+  END
+END
+
+ACTION_FOR_EACH nb IN ~%tsu%amaran~ ~arundel~ ~arundeld~ ~cbarkslv~ ~cechal02~ ~cechalle~ ~cedruid1~ ~cedruid2~ ~dsarchdr~ ~dubnd7~ ~gdruid~ ~%tsu%seniya~ ~trevil03~ ~x#andart~ BEGIN
+  ACTION_IF FILE_EXISTS_IN_GAME ~%nb%.cre~ BEGIN //Archdruids
+    COPY_EXISTING ~%nb%.cre~ ~override~
+      PATCH_INCLUDE ~infinityanimations/lib/fj_cre_validity.tpp~
+      PATCH_IF vl BEGIN
+        PATCH_INCLUDE ~infinityanimations/lib/fj_cre_reindex.tpp~
+        WRITE_SHORT 0x28 0x527c //Animation (arundel)
+        WRITE_BYTE 0x237 1 //Sex (male)
+        WRITE_BYTE 0x273 11 //Class (druid)
+      END
+    BUT_ONLY
+  END
+END
+
+ACTION_FOR_EACH nb IN ~barbar1~ ~barbar2~ ~barbar3~ ~barbar4~ ~bazpat02~ BEGIN
+  ACTION_IF FILE_EXISTS_IN_GAME ~%nb%.cre~ BEGIN //Tan Barbarians
+    COPY_EXISTING ~%nb%.cre~ ~override~
+      PATCH_INCLUDE ~infinityanimations/lib/fj_cre_validity.tpp~
+      PATCH_IF vl BEGIN
+        PATCH_INCLUDE ~infinityanimations/lib/fj_cre_reindex.tpp~
+        WRITE_SHORT 0x28 0x5280 //Animation (barbarian_warrior_tan)
+      END
+    BUT_ONLY
+  END
+END
+
+ACTION_FOR_EACH nb IN ~barb1~ ~barb2~ ~barbgrd~ ~barbgrd2~ ~barbmess~ ~tzshok01~ BEGIN
+  ACTION_IF FILE_EXISTS_IN_GAME ~%nb%.cre~ BEGIN //Red Barbarians
+    COPY_EXISTING ~%nb%.cre~ ~override~
+      PATCH_INCLUDE ~infinityanimations/lib/fj_cre_validity.tpp~
+      PATCH_IF vl BEGIN
+        PATCH_INCLUDE ~infinityanimations/lib/fj_cre_reindex.tpp~
+        WRITE_SHORT 0x28 0x5281 //Animation (barbarian_warrior_red)
+      END
+    BUT_ONLY
+  END
+END
+
+ACTION_FOR_EACH nb IN ~barb3~ ~barb4~ ~barbgood~ ~barborn~ ~bargood~ ~ulgarth~ BEGIN
+  ACTION_IF FILE_EXISTS_IN_GAME ~%nb%.cre~ BEGIN //Brown Barbarians
+    COPY_EXISTING ~%nb%.cre~ ~override~
+      PATCH_INCLUDE ~infinityanimations/lib/fj_cre_validity.tpp~
+      PATCH_IF vl BEGIN
+        PATCH_INCLUDE ~infinityanimations/lib/fj_cre_reindex.tpp~
+        WRITE_SHORT 0x28 0x5282 //Animation (barbarian_warrior_brown)
+      END
+    BUT_ONLY
+  END
+END
+
+ACTION_IF FILE_EXISTS_IN_GAME ~barheal.cre~ BEGIN //Barbarian Shaman Club
+  COPY_EXISTING ~barheal.cre~ ~override~
+    PATCH_IF SOURCE_SIZE > 0x2d3 BEGIN
+      WRITE_SHORT 0x28 0x527f //Animation (barbarian_shaman_club)
+    END
+  BUT_ONLY
+END
+
+ACTION_FOR_EACH nb IN ~barbkin2~ ~barbking~ ~beogorn~ BEGIN
+  ACTION_IF FILE_EXISTS_IN_GAME ~%nb%.cre~ BEGIN //Barbarian Shaman Hammers
+    COPY_EXISTING ~%nb%.cre~ ~override~
+      PATCH_INCLUDE ~infinityanimations/lib/fj_cre_validity.tpp~
+      PATCH_IF vl BEGIN
+        PATCH_INCLUDE ~infinityanimations/lib/fj_cre_reindex.tpp~
+        WRITE_SHORT 0x28 0x527d //Animation (barbarian_shaman_hammer)
+      END
+    BUT_ONLY
+  END
+END
+
+ACTION_IF FILE_EXISTS_IN_GAME ~barbheal.cre~ BEGIN //Barbarian Shaman Staff
+  COPY_EXISTING ~barbheal.cre~ ~override~
+    PATCH_IF SOURCE_SIZE > 0x2d3 BEGIN
+      WRITE_SHORT 0x28 0x527e //Animation (barbarian_shaman_staff)
+    END
+  BUT_ONLY
+END
+
+ACTION_FOR_EACH nb IN ~li#whir~ ~wm_vortx~ BEGIN
+  ACTION_IF FILE_EXISTS_IN_GAME ~%nb%.cre~ BEGIN //Air Elementals Small
+    COPY_EXISTING ~%nb%.cre~ ~override~
+      PATCH_INCLUDE ~infinityanimations/lib/fj_cre_validity.tpp~
+      PATCH_IF vl BEGIN
+        PATCH_INCLUDE ~infinityanimations/lib/fj_cre_reindex.tpp~
+        WRITE_SHORT 0x28 0x7321 //Animation (elemental_air_small)
+        WRITE_BYTE 0x237 1 //Sex (male)
+        WRITE_BYTE 0x271 255 //General (monster)
+        WRITE_BYTE 0x273 186 //Class (elemental_air)
+        WRITE_BYTE 0x275 4 //Gender (neither)
+      END
+    BUT_ONLY
+  END
+END
+
+ACTION_FOR_EACH nb IN ~b#chrear~ ~ca#sear2~ ~ca#sear3~ ~druear01~ ~elearg01~ ~elearpr2~ ~elearpr3~ ~elearsu~ ~elearsu3~ ~elearsu4~ ~elecali1~ ~elecali3~ ~elecali5~ ~elemogre~ ~elemsunn~ ~esp01~ ~godele2~ ~mdearth~ ~mdearth2~ ~swaear01~ ~swaear02~ ~udelde~ BEGIN
+  ACTION_IF FILE_EXISTS_IN_GAME ~%nb%.cre~ BEGIN //Earth Elementals
+    COPY_EXISTING ~%nb%.cre~ ~override~
+      PATCH_INCLUDE ~infinityanimations/lib/fj_cre_validity.tpp~
+      PATCH_IF vl BEGIN
+        PATCH_INCLUDE ~infinityanimations/lib/fj_cre_reindex.tpp~
+        WRITE_SHORT 0x28 0x7300 //Animation (elemental_earth)
+        WRITE_BYTE 0x237 1 //Sex (male)
+        WRITE_BYTE 0x271 255 //General (monster)
+        READ_BYTE 0x275 gd //Gender
+        PATCH_IF gd != 6 BEGIN //If not summoned
+          WRITE_BYTE 0x275 4 //Gender (neither)
+        END
+      END
+    BUT_ONLY
+  END
+END
+
+ACTION_FOR_EACH nb IN ~ca#sear1~ ~elear01~ ~elearpr~ ~elearsu1~ ~elearsu2~ ~elearsuw~ ~shearth~ ~suearth~ ~udearth~ BEGIN
+  ACTION_IF FILE_EXISTS_IN_GAME ~%nb%.cre~ BEGIN //Earth Elementals IWD
+    COPY_EXISTING ~%nb%.cre~ ~override~
+      PATCH_INCLUDE ~infinityanimations/lib/fj_cre_validity.tpp~
+      PATCH_IF vl BEGIN
+        PATCH_INCLUDE ~infinityanimations/lib/fj_cre_reindex.tpp~
+        WRITE_SHORT 0x28 0x5037 //Animation (elemental_earth_iwd)
+        WRITE_BYTE 0x237 1 //Sex (male)
+        WRITE_BYTE 0x271 255 //General (monster)
+        READ_BYTE 0x275 gd //Gender
+        PATCH_IF gd != 6 BEGIN //If not summoned
+          WRITE_BYTE 0x275 4 //Gender (neither)
+        END
+      END
+    BUT_ONLY
+  END
+END
+
+ACTION_FOR_EACH nb IN ~elearl01~ ~eleeel01~ ~kearth~ ~mekear01~ ~sumelear~ BEGIN
+  ACTION_IF FILE_EXISTS_IN_GAME ~%nb%.cre~ BEGIN //Earth Elementals Small
+    COPY_EXISTING ~%nb%.cre~ ~override~
+      PATCH_INCLUDE ~infinityanimations/lib/fj_cre_validity.tpp~
+      PATCH_IF vl BEGIN
+        PATCH_INCLUDE ~infinityanimations/lib/fj_cre_reindex.tpp~
+        WRITE_SHORT 0x28 0x7301 //Animation (elemental_earth_iwd)
+        WRITE_BYTE 0x237 1 //Sex (male)
+        WRITE_BYTE 0x271 255 //General (monster)
+        READ_BYTE 0x275 gd //Gender
+        PATCH_IF (gd != 6) AND (gd != 7) BEGIN //If not summoned or illusionary
+          WRITE_BYTE 0x275 4 //Gender (neither)
+        END
+      END
+    BUT_ONLY
+  END
+END
+
+ACTION_FOR_EACH nb IN ~suelew2~ ~tg#did5~ ~acidele1~ ~b#chrfir~ ~c6drowgo~ ~ca#zfir3~ ~ddguard7~ ~drufir01~ ~elecali2~ ~elecali4~ ~elemimix~ ~elemzaam~ ~elfir~ ~elfir01~ ~elfirg01~ ~godele3~ ~gorfir01~ ~gorfir02~ ~gorfir03~ ~gorfir04~ ~lightele~ ~obsfir06~ ~pschaos~ ~psmaele~ ~sk#fform~ ~suelew1~ ~sufire~ ~telelfir~ ~udeldf~ ~udfire~ ~yscara04~ BEGIN
+  ACTION_IF FILE_EXISTS_IN_GAME ~%nb%.cre~ BEGIN //Fire Elementals
+    COPY_EXISTING ~%nb%.cre~ ~override~
+      PATCH_INCLUDE ~infinityanimations/lib/fj_cre_validity.tpp~
+      PATCH_IF vl BEGIN
+        PATCH_INCLUDE ~infinityanimations/lib/fj_cre_reindex.tpp~
+        WRITE_SHORT 0x28 0x7310 //Animation (elemental_fire)
+        WRITE_BYTE 0x237 1 //Sex (male)
+        WRITE_BYTE 0x271 255 //General (monster)
+        READ_BYTE 0x275 gd //Gender
+        PATCH_IF (gd != 6) AND (gd != 7) BEGIN //If not summoned or illusionary
+          WRITE_BYTE 0x275 4 //Gender (neither)
+        END
+      END
+    BUT_ONLY
+  END
+END
+
+ACTION_FOR_EACH nb IN ~ca#zfir2~ ~deckfele~ ~elfirpr2~ ~elfirpr3~ ~elfirsu~ ~elfirsu3~ ~elfirsu4~ ~lavaele~ ~lavaele1~ ~swafir01~ ~swafir02~ BEGIN
+  ACTION_IF FILE_EXISTS_IN_GAME ~%nb%.cre~ BEGIN //Fire Elementals IWD
+    COPY_EXISTING ~%nb%.cre~ ~override~
+      PATCH_INCLUDE ~infinityanimations/lib/fj_cre_validity.tpp~
+      PATCH_IF vl BEGIN
+        PATCH_INCLUDE ~infinityanimations/lib/fj_cre_reindex.tpp~
+        WRITE_SHORT 0x28 0x5038 //Animation (elemental_fire_iwd)
+        WRITE_BYTE 0x271 255 //General (monster)
+        READ_BYTE 0x275 gd //Gender
+        PATCH_IF (gd != 6) AND (gd != 7) BEGIN //If not summoned or illusionary
+          WRITE_BYTE 0x275 4 //Gender (neither)
+        END
+      END
+    BUT_ONLY
+  END
+END
+
+ACTION_FOR_EACH nb IN ~ca#zfir1~ ~elefel01~ ~elfirl01~ ~elfirpr~ ~elfirsu1~ ~elfirsu2~ ~elfirsuw~ ~shfire~ ~sumelfir~ BEGIN
+  ACTION_IF FILE_EXISTS_IN_GAME ~%nb%.cre~ BEGIN //Fire Elementals Small
+    COPY_EXISTING ~%nb%.cre~ ~override~
+      PATCH_INCLUDE ~infinityanimations/lib/fj_cre_validity.tpp~
+      PATCH_IF vl BEGIN
+        PATCH_INCLUDE ~infinityanimations/lib/fj_cre_reindex.tpp~
+        WRITE_SHORT 0x28 0x7311 //Animation (elemental_fire_iwd)
+        WRITE_BYTE 0x271 255 //General (monster)
+        READ_BYTE 0x275 gd //Gender
+        PATCH_IF (gd != 6) AND (gd != 7) BEGIN //If not summoned or illusionary
+          WRITE_BYTE 0x275 4 //Gender (neither)
+        END
+      END
+    BUT_ONLY
+  END
+END
+
+ACTION_FOR_EACH nb IN ~elemwag~ ~elwatg01~ ~li#druwa~ ~tg#benh~ ~tg#wel2~ ~tg#wel3~ BEGIN
+  ACTION_IF FILE_EXISTS_IN_GAME ~%nb%.cre~ BEGIN //Water Elementals IWD
+    COPY_EXISTING ~%nb%.cre~ ~override~
+      PATCH_INCLUDE ~infinityanimations/lib/fj_cre_validity.tpp~
+      PATCH_IF vl BEGIN
+        PATCH_INCLUDE ~infinityanimations/lib/fj_cre_reindex.tpp~
+        WRITE_SHORT 0x28 0x5039 //Animation (elemental_water_iwd)
+        WRITE_BYTE 0x237 1 //Sex (male)
+        WRITE_BYTE 0x271 255 //General (monster)
+        READ_BYTE 0x275 gd //Gender
+        PATCH_IF (gd != 6) AND (gd != 7) BEGIN //If not summoned or illusionary
+          WRITE_BYTE 0x275 4 //Gender (neither)
+        END
+      END
+    BUT_ONLY
+  END
+END
+
+COPY_EXISTING ~elemhydr.cre~ ~override~ //Olhydra
+  PATCH_IF SOURCE_SIZE > 0x2d3 BEGIN
+    WRITE_SHORT 0x28 0xef10 //Animation (water_weird)
+    WRITE_BYTE 0x271 255 //General (monster)
+  END
+BUT_ONLY
+
+ACTION_FOR_EACH nb IN ~gorfirg~ ~hgber01~ ~hgwar02~ ~sorkyst~ ~yscara03~ ~ysfire01~ ~ysfire02~ ~ysg2~ ~yssold10~ BEGIN
+  ACTION_IF FILE_EXISTS_IN_GAME ~%nb%.cre~ BEGIN //Fire Giants IWD
+    COPY_EXISTING ~%nb%.cre~ ~override~
+      PATCH_INCLUDE ~infinityanimations/lib/fj_cre_validity.tpp~
+      PATCH_IF vl BEGIN
+        PATCH_INCLUDE ~infinityanimations/lib/fj_cre_reindex.tpp~
+        WRITE_SHORT 0x28 0x504a //Animation (fire_giant_iwd)
+        WRITE_BYTE 0x237 1 //Sex (male)
+        WRITE_BYTE 0x271 5 //General (gianthumanoid)
+        READ_BYTE 0x275 gd //Gender
+        PATCH_IF (gd != 6) AND (gd != 7) BEGIN //If not summoned or illusionary
+          WRITE_BYTE 0x275 1 //Gender (male)
+        END
+        WRITE_BYTE 0x27b 19 //Alignment (lawful evil by definition)
+      END
+    BUT_ONLY
+  END
+END
+
+ACTION_IF FILE_EXISTS_IN_GAME ~rockgol1.cre~ BEGIN //Rock Golem
+  COPY_EXISTING ~rockgol1.cre~ ~override~
+    PATCH_IF SOURCE_SIZE > 0x2d3 BEGIN
+      WRITE_SHORT 0x28 0x7f07 //Animation (golem_clay)
+    END
+  BUT_ONLY
+END
+
+ACTION_FOR_EACH nb IN ~garsaph1~ ~garsaph2~ ~gholim~ ~godgol1~ ~godgol2~ ~golada01~ ~golkill2~ ~golsaph1~ ~golsaph2~ ~golsaph3~ ~gordeckb~ ~ritgol0~ ~ritgol1~ ~ritgol2~ ~z#gadama~ BEGIN
+  ACTION_IF FILE_EXISTS_IN_GAME ~%nb%.cre~ BEGIN //Iron Golems
+    COPY_EXISTING ~%nb%.cre~ ~override~
+      PATCH_INCLUDE ~infinityanimations/lib/fj_cre_validity.tpp~
+      PATCH_IF vl BEGIN
+        PATCH_INCLUDE ~infinityanimations/lib/fj_cre_reindex.tpp~
+        WRITE_SHORT 0x28 0x7f04 //Animation (golem_iron)
+        WRITE_BYTE 0x237 1 //Sex (male)
+        WRITE_BYTE 0x271 5 //General (gianthumanoid)
+        READ_BYTE 0x275 gd //Gender
+        PATCH_IF (gd != 6) AND (gd != 7) BEGIN //If not summoned or illusionary
+          WRITE_BYTE 0x275 4 //Gender (neither)
+        END
+        LAUNCH_PATCH_FUNCTION DELETE_CRE_EFFECT
+          INT_VAR opcode_to_delete = 51 //Strong-dark by RGB
+        END
+      END
+    BUT_ONLY
+  END
+END
+
+ACTION_FOR_EACH nb IN ~cbgorgrd~ ~cbgorgre~ ~gartopz1~ ~gartopz2~ ~godgol3~ ~godgol4~ ~godgol5~ ~godgol6~ ~godruby~ ~goliro01~ ~golruby1~ ~gorgrd01~ ~gorgrd02~ ~gorsta08~ ~irontomb~ ~kpgol04~ ~kpgol07~ ~shiron~ ~tomegol4~ ~yacasas~ BEGIN
+  ACTION_IF FILE_EXISTS_IN_GAME ~%nb%.cre~ BEGIN //Iron Golems IWD
+    COPY_EXISTING ~%nb%.cre~ ~override~
+      PATCH_INCLUDE ~infinityanimations/lib/fj_cre_validity.tpp~
+      PATCH_IF vl BEGIN
+        PATCH_INCLUDE ~infinityanimations/lib/fj_cre_reindex.tpp~
+        WRITE_SHORT 0x28 0x504b //Animation (golem_iron_iwd)
+        WRITE_BYTE 0x237 1 //Sex (male)
+        LAUNCH_PATCH_FUNCTION DELETE_CRE_EFFECT
+          INT_VAR opcode_to_delete = 51 //Strong-dark by RGB
+        END
+      END
+    BUT_ONLY
+  END
+END
+
+ACTION_FOR_EACH nb IN ~bpsahugi~ ~chevil04~ ~elesah01~ ~elesah02~ ~obssah01~ ~obssah03~ ~obssah04~ ~obssah05~ ~ppsaha~ ~ppsahale~ ~sahamb01~ ~sahamb02~ ~sahamb03~ ~sahamb04~ ~sahamb05~ ~sahamb06~ ~sahbar01~ ~sahchf01~ ~sahchf02~ ~sahramb1~ ~sahramb2~ ~sahramb4~ ~sahramb5~ ~sahrar01~ ~sahrgr03~ ~sahrnt01~ ~sahspy01~ ~sahspy02~ ~sahspy04~ ~sahsss01~ ~sahsss02~ ~sahsss03~ ~sahuag01~ ~x#saha01~ ~x#saha02~ BEGIN
+  ACTION_IF FILE_EXISTS_IN_GAME ~%nb%.cre~ BEGIN //Sahuagin
+    COPY_EXISTING ~%nb%.cre~ ~override~
+      PATCH_INCLUDE ~infinityanimations/lib/fj_cre_validity.tpp~
+      PATCH_IF vl BEGIN
+        PATCH_INCLUDE ~infinityanimations/lib/fj_cre_reindex.tpp~
+        WRITE_SHORT 0x28 0x7f09 //Animation (sahuagin)
+        WRITE_BYTE 0x2f 31 //Skin color (light sea blue)
+        READ_BYTE 0x237 sx //Sex
+        PATCH_IF sx != 2 BEGIN //If not female
+          WRITE_BYTE 0x237 1 //male
+        END
+        WRITE_BYTE 0x271 1 //General (humanoid)
+        READ_BYTE 0x275 gd //Gender
+        PATCH_IF gd != 2 BEGIN //If not female
+          WRITE_BYTE 0x275 1 //male
+        END
+      END
+    BUT_ONLY
+  END
+END
+
+ACTION_FOR_EACH nb IN ~obssah02~ ~sahpr1~ ~sahpr3~ ~sahpr4~ ~sahpr5~ ~sahpri02~ ~sahramb3~ BEGIN
+  ACTION_IF FILE_EXISTS_IN_GAME ~%nb%.cre~ BEGIN //Sahuagin Priestesses
+    COPY_EXISTING ~%nb%.cre~ ~override~
+      PATCH_INCLUDE ~infinityanimations/lib/fj_cre_validity.tpp~
+      PATCH_IF vl BEGIN
+        PATCH_INCLUDE ~infinityanimations/lib/fj_cre_reindex.tpp~
+        WRITE_SHORT 0x28 0x5277 //Animation (sahuagin_iwd)
+        WRITE_BYTE 0x2f 53 //Skin color (green)
+        WRITE_BYTE 0x237 2 //Sex (female)
+      END
+    BUT_ONLY
+  END
+END
+
+ACTION_FOR_EACH nb IN ~guareye6~ ~sahbar02~ ~sahbar03~ ~sahcapt0~ ~sahcapt1~ ~sahcpt02~ ~sahkin01~ ~sahkng01~ ~sahkng02~ ~sahpri01~ ~sahreb02~ ~sahryl01~ ~udsaha~ BEGIN
+  ACTION_IF FILE_EXISTS_IN_GAME ~%nb%.cre~ BEGIN //Sahuagins (Large IWD)
+    COPY_EXISTING ~%nb%.cre~ ~override~
+      PATCH_INCLUDE ~infinityanimations/lib/fj_cre_validity.tpp~
+      PATCH_IF vl BEGIN
+        PATCH_INCLUDE ~infinityanimations/lib/fj_cre_reindex.tpp~
+        WRITE_SHORT 0x28 0x5278 //Animation (sahuagin_large_iwd)
+        WRITE_BYTE 0x2f 56 //Skin color (dark turquoise)
+        WRITE_BYTE 0x237 1 //Sex (male)
+        WRITE_BYTE 0x273 169 //Class (sahuagin)
+      END
+    BUT_ONLY
+  END
+END
+
+ACTION_FOR_EACH nb IN ~sahcpt01~ ~sahextra~ ~sahgrd01~ ~sahgrd02~ ~sahgrd03~ ~sahpr2~ ~sahrgr01~ ~sahrgr02~ BEGIN
+  ACTION_IF FILE_EXISTS_IN_GAME ~%nb%.cre~ BEGIN //Sahuagins (Large)
+    COPY_EXISTING ~%nb%.cre~ ~override~
+      PATCH_INCLUDE ~infinityanimations/lib/fj_cre_validity.tpp~
+      PATCH_IF vl BEGIN
+        PATCH_INCLUDE ~infinityanimations/lib/fj_cre_reindex.tpp~
+        WRITE_SHORT 0x28 0x7f23 //Animation (sahuagin_large)
+        WRITE_BYTE 0x2f 31 //Skin color (light sea blue)
+      END
+    BUT_ONLY
+  END
+END
+VERBOSE
+
+//! More Icewind Dale II Animations /////////////////////////////////////////
+BEGIN @60 //More Icewind Dale II Animations
+DESIGNATED 600
+REQUIRE_COMPONENT ~setup-infinityanimations.tp2~ 0 @26 //This component requires the main component.
+
+ACTION_IF NOT MOD_IS_INSTALLED ~setup-infinityanimations.tp2~ 0 BEGIN
+  FAIL @26 //This component requires the main component.
+END
+
+SILENT
+ACTION_FOR_EACH nb IN ~bhfgiant~ ~cultmo9~ ~finyaga~ ~giafir01~ ~giantf01~ ~giantfr~ ~hgmag01~ ~hgmag02~ ~hgwar01~ ~sumgia~ ~yaga01~ ~yagaspir~ ~ysguar01~ BEGIN
+  ACTION_IF FILE_EXISTS_IN_GAME ~%nb%.cre~ BEGIN //Fire Giants
+    COPY_EXISTING ~%nb%.cre~ ~override~
+      PATCH_INCLUDE ~infinityanimations/lib/fj_cre_validity.tpp~
+      PATCH_IF vl BEGIN
+        PATCH_INCLUDE ~infinityanimations/lib/fj_cre_reindex.tpp~
+        WRITE_SHORT 0x28 0x7f3e //Animation (fire_giant)
+        WRITE_BYTE 0x237 1 //Sex (male)
+        WRITE_BYTE 0x271 5 //General (gianthumanoid)
+        WRITE_BYTE 0x272 142 //Race (giant)
+        READ_BYTE 0x275 gd //Gender
+        PATCH_IF (gd != 6) AND (gd != 7) BEGIN //If not summoned or illusionary
+          WRITE_BYTE 0x275 1 //Gender (male)
+        END
+        WRITE_BYTE 0x27b 19 //Alignment (lawful evil by definition)
+      END
+    BUT_ONLY
+  END
+END
+
+ACTION_FOR_EACH nb IN ~cb4300gt~ ~firbolg~ ~ggiantf1~ ~ggiantf2~ ~ggiantf3~ ~ggiantfr~ ~tsjgiant~ BEGIN
+  ACTION_IF FILE_EXISTS_IN_GAME ~%nb%.cre~ BEGIN //Fire Giants 2
+    COPY_EXISTING ~%nb%.cre~ ~override~
+      PATCH_INCLUDE ~infinityanimations/lib/fj_cre_validity.tpp~
+      PATCH_IF vl BEGIN
+        PATCH_INCLUDE ~infinityanimations/lib/fj_cre_reindex.tpp~
+        WRITE_SHORT 0x28 0x5c01 //Animation (fire_giant_2)
+        WRITE_BYTE 0x237 1 //Sex (male)
+        WRITE_BYTE 0x271 5 //General (gianthumanoid)
+        READ_BYTE 0x275 gd //Gender
+        PATCH_IF (gd != 6) AND (gd != 7) BEGIN //If not summoned or illusionary
+          WRITE_BYTE 0x275 1 //Gender (male)
+        END
+        WRITE_BYTE 0x27b 19 //Alignment (lawful evil by definition)
+      END
+    BUT_ONLY
+  END
+END
+
+ACTION_FOR_EACH nb IN ~arengo11~ ~arengo12~ ~fshorde3~ BEGIN
+  ACTION_IF FILE_EXISTS_IN_GAME ~%nb%.cre~ BEGIN //Goblin Worgriders
+    COPY_EXISTING ~%nb%.cre~ ~override~
+      PATCH_INCLUDE ~infinityanimations/lib/fj_cre_validity.tpp~
+      PATCH_IF vl BEGIN
+        PATCH_INCLUDE ~infinityanimations/lib/fj_cre_reindex.tpp~
+        WRITE_SHORT 0x28 0x5018 //Animation (goblin_worgrider)
+        SAY INITIAL_MEETING ~~ [T-GBW08A]
+        SAY MORALE ~~ [T-GBW09A]
+        SAY UNHAPPY_BREAKING_POINT ~~ [T-GBW09A]
+        SAY BATTLE_CRY1 ~~ [T-GBW01A]
+        SAY BATTLE_CRY2 ~~ [T-GBW02A]
+        SAY BATTLE_CRY3 ~~ [T-GBW04A]
+        SAY ATTACK1 ~~ [T-GBW03A]
+        SAY DAMAGE ~~ [T-GBW07A]
+        SAY DYING ~~ [T-GBW10A]
+        SAY SELECT_COMMON1 ~~ [T-GBW01A]
+        SAY SELECT_COMMON2 ~~ [T-GBW02A]
+        SAY SELECT_COMMON3 ~~ [T-GBW04B]
+        SAY CRITICAL_MISS ~~ [T-GBW03B]
+      END
+    BUT_ONLY
+  END
+END
+
+ACTION_IF FILE_EXISTS_IN_GAME ~goblinsp.cre~ BEGIN //Goblin Worgrider Captain
+  COPY_EXISTING ~goblinsp.cre~ ~override~
+    PATCH_IF SOURCE_SIZE > 0x2d3 BEGIN
+      WRITE_SHORT 0x28 0x5019 //Animation (goblin_worgrider_captain)
+      SAY INITIAL_MEETING ~~ [T-GCW08A]
+      SAY MORALE ~~ [T-GCW09A]
+      SAY UNHAPPY_BREAKING_POINT ~~ [T-GCW09A]
+      SAY BATTLE_CRY1 ~~ [T-GCW01A]
+      SAY BATTLE_CRY2 ~~ [T-GCW02A]
+      SAY BATTLE_CRY3 ~~ [T-GCW04A]
+      SAY ATTACK1 ~~ [T-GCW03A]
+      SAY DAMAGE ~~ [T-GCW07A]
+      SAY DYING ~~ [T-GCW10A]
+      SAY SELECT_COMMON1 ~~ [T-GCW01A]
+      SAY SELECT_COMMON2 ~~ [T-GCW02A]
+      SAY SELECT_COMMON3 ~~ [T-GCW04B]
+      SAY CRITICAL_MISS ~~ [T-GCW03B]
+    END
+  BUT_ONLY
+END
+
+ACTION_FOR_EACH nb IN ~dsgobchf~ ~icgob04~ ~iwdgob2~ ~iwdgob3~ ~lhgobc1~ BEGIN
+  ACTION_IF FILE_EXISTS_IN_GAME ~%nb%.cre~ BEGIN //Goblin Leaders
+    COPY_EXISTING ~%nb%.cre~ ~override~
+      PATCH_INCLUDE ~infinityanimations/lib/fj_cre_validity.tpp~
+      PATCH_IF vl BEGIN
+        PATCH_INCLUDE ~infinityanimations/lib/fj_cre_reindex.tpp~
+        WRITE_SHORT 0x28 0x5252 //Animation (goblin_leader)
+        SAY INITIAL_MEETING ~~ [T-GBC08A]
+        SAY MORALE ~~ [T-GBC09A]
+        SAY UNHAPPY_BREAKING_POINT ~~ [T-GBC09A]
+        SAY BATTLE_CRY1 ~~ [T-GBC01A]
+        SAY BATTLE_CRY2 ~~ [T-GBC03B]
+        SAY ATTACK1 ~~ [T-GBC03A]
+        SAY DAMAGE ~~ [T-GBC07A]
+        SAY DYING ~~ [T-GBC10A]
+        SAY SELECT_COMMON1 ~~ [T-GBC02A]
+        SAY SELECT_COMMON2 ~~ [T-GBC04B]
+      END
+    BUT_ONLY
+  END
+END
+
+ACTION_FOR_EACH nb IN ~arenago9~ ~arengo10~ ~f_gobele~ ~fshorde1~ ~tupung~ ~tupungcs~ BEGIN
+  ACTION_IF FILE_EXISTS_IN_GAME ~%nb%.cre~ BEGIN //Goblin Elite Brown Axes
+    COPY_EXISTING ~%nb%.cre~ ~override~
+      PATCH_INCLUDE ~infinityanimations/lib/t-cre_fixer.tpp~ //These CREs need fixing because of hosed slots
+      WRITE_SHORT 0x28 0x5253 //Animation (goblinelite_axe_brown)
+      SAY INITIAL_MEETING ~~ [T-GIX07A]
+      SAY MORALE ~~ [T-GIX09A]
+      SAY UNHAPPY_BREAKING_POINT ~~ [T-GIX09A]
+      SAY BATTLE_CRY1 ~~ [T-GIX01C]
+      SAY BATTLE_CRY2 ~~ [T-GIX04A]
+      SAY BATTLE_CRY3 ~~ [T-GIX04E]
+      SAY ATTACK1 ~~ [T-GIX04B]
+      SAY DAMAGE ~~ [T-GIX07B]
+      SAY DYING ~~ [T-GIX09B]
+      SAY SELECT_COMMON1 ~~ [T-GIX02B]
+      SAY SELECT_COMMON2 ~~ [T-GIX04C]
+      SAY SELECT_COMMON3 ~~ [T-GIX11B]
+      SAY CRITICAL_MISS ~~ [T-GIX04D]
+    BUT_ONLY
+  END
+END
+
+ACTION_FOR_EACH nb IN ~arengo14~ ~d0qpsy04~ ~elehob01~ ~gpsimb~ BEGIN
+  ACTION_IF FILE_EXISTS_IN_GAME ~%nb%.cre~ BEGIN //Goblin Elite Brown Bows
+    COPY_EXISTING ~%nb%.cre~ ~override~
+      PATCH_INCLUDE ~infinityanimations/lib/fj_cre_validity.tpp~
+      PATCH_IF vl BEGIN
+        PATCH_INCLUDE ~infinityanimations/lib/fj_cre_reindex.tpp~
+        WRITE_SHORT 0x28 0x5254 //Animation (goblinelite_bow_brown)
+        SAY INITIAL_MEETING ~~ [T-GEB08A]
+        SAY MORALE ~~ [T-GEB10B]
+        SAY UNHAPPY_BREAKING_POINT ~~ [T-GEB10B]
+        SAY BATTLE_CRY1 ~~ [T-GEB02A]
+        SAY BATTLE_CRY2 ~~ [T-GEB02C]
+        SAY BATTLE_CRY3 ~~ [T-GEB06A]
+        SAY BATTLE_CRY4 ~~ [T-GEB06B]
+        SAY ATTACK1 ~~ [T-GEB03A]
+        SAY DAMAGE ~~ [T-GEB08B]
+        SAY DYING ~~ [T-GEB10A]
+        SAY SELECT_COMMON1 ~~ [T-GEB01A]
+        SAY SELECT_COMMON2 ~~ [T-GEB01B]
+        SAY SELECT_COMMON3 ~~ [T-GEB03B]
+        SAY SELECT_COMMON4 ~~ [T-GEB06C]
+        SAY CRITICAL_MISS ~~ [T-GEB03C]
+        SAY SPELL_DISRUPTED ~~ [T-GEB07B]
+      END
+    BUT_ONLY
+  END
+END
+
+ACTION_FOR_EACH nb IN ~icgob05~ ~arenago7~ ~arenago8~ ~fsgobl~ ~iwdgob4~ ~arengo15~ ~dw#rnlg3~ BEGIN
+  ACTION_IF FILE_EXISTS_IN_GAME ~%nb%.cre~ BEGIN //Goblin Axes Brown
+    COPY_EXISTING ~%nb%.cre~ ~override~
+      PATCH_INCLUDE ~infinityanimations/lib/fj_cre_validity.tpp~
+      PATCH_IF vl BEGIN
+        PATCH_INCLUDE ~infinityanimations/lib/fj_cre_reindex.tpp~
+        WRITE_SHORT 0x28 0x5258 //Animation (goblin_axe_brown)
+        SAY INITIAL_MEETING ~~ [T-GBX08A]
+        SAY MORALE ~~ [T-GBX10A]
+        SAY UNHAPPY_BREAKING_POINT ~~ [T-GBX10A]
+        SAY BATTLE_CRY1 ~~ [T-GBX01A]
+        SAY BATTLE_CRY2 ~~ [T-GBX01B]
+        SAY BATTLE_CRY3 ~~ [T-GBX04A]
+        SAY BATTLE_CRY4 ~~ [T-GBX04C]
+        SAY ATTACK1 ~~ [T-GBX03A]
+        SAY DAMAGE ~~ [T-GBX08B]
+        SAY DYING ~~ [T-GBX10B]
+        SAY SELECT_COMMON1 ~~ [T-GBX02A]
+        SAY SELECT_COMMON2 ~~ [T-GBX02B]
+        SAY SELECT_COMMON3 ~~ [T-GBX04B]
+        SAY SELECT_COMMON4 ~~ [T-GBX04D]
+        SAY CRITICAL_MISS ~~ [T-GBX03B]
+        SAY SPELL_DISRUPTED ~~ [T-GBX03C]
+      END
+    BUT_ONLY
+  END
+END
+
+ACTION_FOR_EACH nb IN ~icgob02~ ~iwdgob1~ ~o!gobl~ ~ysgp03~ BEGIN
+  ACTION_IF FILE_EXISTS_IN_GAME ~%nb%.cre~ BEGIN //Goblin Bows Brown
+    COPY_EXISTING ~%nb%.cre~ ~override~
+      PATCH_INCLUDE ~infinityanimations/lib/fj_cre_validity.tpp~
+      PATCH_IF vl BEGIN
+        PATCH_INCLUDE ~infinityanimations/lib/fj_cre_reindex.tpp~
+        WRITE_SHORT 0x28 0x5259 //Animation (goblin_bow_brown)
+        SAY INITIAL_MEETING ~~ [T-GBB07A]
+        SAY MORALE ~~ [T-GBB09B]
+        SAY UNHAPPY_BREAKING_POINT ~~ [T-GBB09B]
+        SAY BATTLE_CRY1 ~~ [T-GBB01A]
+        SAY BATTLE_CRY2 ~~ [T-GBB01B]
+        SAY BATTLE_CRY3 ~~ [T-GBB06A]
+        SAY BATTLE_CRY4 ~~ [T-GBB06B]
+        SAY ATTACK1 ~~ [T-GBB03A]
+        SAY DAMAGE ~~ [T-GBB07B]
+        SAY DYING ~~ [T-GBB09A]
+        SAY SELECT_COMMON1 ~~ [T-GBB02A]
+        SAY SELECT_COMMON2 ~~ [T-GBB02B]
+        SAY SELECT_COMMON3 ~~ [T-GBB03B]
+        SAY SELECT_COMMON4 ~~ [T-GBB06C]
+        SAY CRITICAL_MISS ~~ [T-GBB03C]
+      END
+    BUT_ONLY
+  END
+END
+
+ACTION_FOR_EACH nb IN ~arenago3~ ~arenago4~ BEGIN
+  ACTION_IF FILE_EXISTS_IN_GAME ~%nb%.cre~ BEGIN //Goblin Elite Axes
+    COPY_EXISTING ~%nb%.cre~ ~override~
+      PATCH_INCLUDE ~infinityanimations/lib/fj_cre_validity.tpp~
+      PATCH_IF vl BEGIN
+        PATCH_INCLUDE ~infinityanimations/lib/fj_cre_reindex.tpp~
+        WRITE_SHORT 0x28 0xe420 //Animation (goblinelite_axe)
+      END
+    BUT_ONLY
+  END
+END
+
+ACTION_FOR_EACH nb IN ~arengo13~ ~dw#rnlg2~ BEGIN
+  ACTION_IF FILE_EXISTS_IN_GAME ~%nb%.cre~ BEGIN //Goblin Elite Bows
+    COPY_EXISTING ~%nb%.cre~ ~override~
+      PATCH_INCLUDE ~infinityanimations/lib/fj_cre_validity.tpp~
+      PATCH_IF vl BEGIN
+        PATCH_INCLUDE ~infinityanimations/lib/fj_cre_reindex.tpp~
+        WRITE_SHORT 0x28 0xe430 //Animation (goblinelite_bow)
+      END
+    BUT_ONLY
+  END
+END
+
+ACTION_FOR_EACH nb IN ~hook1~ ~hook4~ BEGIN
+  ACTION_IF FILE_EXISTS_IN_GAME ~%nb%.cre~ BEGIN //Hook Horrors
+    COPY_EXISTING ~%nb%.cre~ ~override~
+      PATCH_INCLUDE ~infinityanimations/lib/fj_cre_validity.tpp~
+      PATCH_IF vl BEGIN
+        PATCH_INCLUDE ~infinityanimations/lib/fj_cre_reindex.tpp~
+        WRITE_SHORT 0x28 0x525a //Animation (hook_horror)
+        WRITE_BYTE 0x237 1 //Sex (male)
+        WRITE_BYTE 0x272 130 //Race (umberhulk)
+        WRITE_BYTE 0x273 168 //Class (umberhulk)
+        SAY INITIAL_MEETING ~~ [T-HOO07A]
+        SAY MORALE ~~ [T-HOO09A]
+        SAY UNHAPPY_BREAKING_POINT ~~ [T-HOO09A]
+        SAY BATTLE_CRY1 ~~ [T-HOO01A]
+        SAY BATTLE_CRY2 ~~ [T-HOO02A]
+        SAY ATTACK1 ~~ [T-HOO04B]
+        SAY DAMAGE ~~ [T-HOO08A]
+        SAY DYING ~~ [T-HOO10A]
+        SAY SELECT_COMMON1 ~~ [T-HOO03A]
+        SAY SELECT_COMMON2 ~~ [T-HOO03B]
+        SAY CRITICAL_MISS ~~ [T-HOO04A]
+      END
+    BUT_ONLY
+  END
+END
+
+ACTION_FOR_EACH nb IN ~aghermit~ ~b#knit04~ ~bhtelli1~ ~bhtellis~ ~bpdru10a~ ~bpdru8a~ ~bpdru8b~ ~bpdru8ba~ ~catura~ ~cbmalr6~ ~cefgt01~ ~cefgt02~ ~cefgt04~ ~cmlstr2~ ~dgdru01~ ~dgdru02~ ~%tsu%izefia~ ~mdruide~ ~%tsu%takiyah~ ~tdr10a~ ~tdr10b~ ~tdr6a~ ~tdr8a~ ~tdr8b~ ~vicg2~ ~x#shdr6~ ~x#shdr6a~ ~x#shdr6b~ ~x#shdr8a~ ~x#shdr8b~ BEGIN
+  ACTION_IF FILE_EXISTS_IN_GAME ~%nb%.cre~ BEGIN //Shadow Druids (Malarites)
+    COPY_EXISTING ~%nb%.cre~ ~override~
+      PATCH_INCLUDE ~infinityanimations/lib/fj_cre_validity.tpp~
+      PATCH_IF vl BEGIN
+        PATCH_INCLUDE ~infinityanimations/lib/fj_cre_reindex.tpp~
+        WRITE_SHORT 0x28 0x5244 //Animation (malarite)
+        WRITE_BYTE 0x237 1 //Sex (male)
+        READ_BYTE 0x272 rc //Race
+        PATCH_IF rc = 143 BEGIN //If orc
+          WRITE_BYTE 0x272 3 //half-elf (fix for aghermit)
+        END
+        READ_BYTE 0x273 cs //Class
+        PATCH_IF cs = 3 BEGIN //If cleric
+          WRITE_BYTE 0x273 11 //druid (fix Tutu druids)
+        END
+        PATCH_IF SLONG_AT BATTLE_CRY1 < 1 BEGIN
+          SAY BATTLE_CRY1 ~~ [T-MAL01A]
+          SAY BATTLE_CRY2 ~~ [T-MAL01B]
+          SAY BATTLE_CRY3 ~~ [T-MAL02A]
+          SAY BATTLE_CRY4 ~~ [T-MAL02B]
+        END
+        PATCH_IF SLONG_AT ATTACK1 < 1 BEGIN
+          SAY ATTACK1 ~~ [T-MAL03B]
+        END
+        PATCH_IF SLONG_AT DAMAGE < 1 BEGIN
+          SAY DAMAGE ~~ [T-MAL07B]
+        END
+        PATCH_IF SLONG_AT DYING < 1 BEGIN
+          SAY DYING ~~ [T-MAL09C]
+        END
+        PATCH_IF SLONG_AT SELECT_COMMON1 < 1 BEGIN
+          SAY SELECT_COMMON1 ~~ [T-MAL01A]
+          SAY SELECT_COMMON2 ~~ [T-MAL01B]
+          SAY SELECT_COMMON3 ~~ [T-MAL02A]
+          SAY SELECT_COMMON4 ~~ [T-MAL02B]
+        END
+      END
+    BUT_ONLY
+  END
+END
+
+ACTION_FOR_EACH nb IN ~clone01~ ~clone1~ ~drelle~ ~drelle2~ ~o#clone~ ~psmysend~ ~x#elles~ BEGIN
+  ACTION_IF FILE_EXISTS_IN_GAME ~%nb%.cre~ BEGIN //Ellesime Clones
+    COPY_EXISTING ~%nb%.cre~ ~override~
+      PATCH_INCLUDE ~infinityanimations/lib/fj_cre_validity.tpp~
+      PATCH_IF vl BEGIN
+        PATCH_INCLUDE ~infinityanimations/lib/fj_cre_reindex.tpp~
+        WRITE_SHORT 0x28 0x5b00 //Animation (ellesime_white-haired)
+        PATCH_IF (BYTE_AT 0x273 = 114) OR (BYTE_AT 0x273 = 255) BEGIN //If invalid class
+          WRITE_BYTE 0x273 3 //Class (cleric)
+        END
+      END
+    BUT_ONLY
+  END
+END
+
+ACTION_FOR_EACH nb IN ~cultmo8~ ~iwdmist3~ ~iwdmist4~ ~iwdmist8~ ~gormistp~ ~hgmis02~ ~mistpo01~ BEGIN
+  ACTION_IF FILE_EXISTS_IN_GAME ~%nb%.cre~ BEGIN //Poison Mists
+    COPY_EXISTING ~%nb%.cre~ ~override~
+      PATCH_INCLUDE ~infinityanimations/lib/fj_cre_validity.tpp~
+      PATCH_IF vl BEGIN
+        PATCH_INCLUDE ~infinityanimations/lib/fj_cre_reindex.tpp~
+        WRITE_SHORT 0x28 0x5b01 //Animation (lagoon_creature)
+        PATCH_IF (BYTE_AT 0x237 != 2) BEGIN //If not female
+          WRITE_BYTE 0x237 1 //Sex (male)
+        END
+      END
+    BUT_ONLY
+  END
+END
+
+ACTION_FOR_EACH nb IN ~behund01~ ~demtyra~ ~melsum03~ ~tyrorb~ ~xsbehold~ BEGIN
+  ACTION_IF FILE_EXISTS_IN_GAME ~%nb%.cre~ BEGIN //Death Tyrants
+    COPY_EXISTING ~%nb%.cre~ ~override~
+      PATCH_INCLUDE ~infinityanimations/lib/fj_cre_validity.tpp~
+      PATCH_IF vl BEGIN
+        PATCH_INCLUDE ~infinityanimations/lib/fj_cre_reindex.tpp~
+        WRITE_SHORT 0x28 0x5c00 //Animation (death_tyrant)
+        WRITE_BYTE 0x271 4 //General (undead)
+        WRITE_BYTE 0x275 4 //Gender (neither)
+      END
+    BUT_ONLY
+  END
+END
+
+ACTION_IF FILE_EXISTS_IN_GAME ~caliwolf.cre~ BEGIN //Wererat
+  COPY_EXISTING ~caliwolf.cre~ ~override~
+    PATCH_IF SOURCE_SIZE > 0x2d3 BEGIN
+      WRITE_SHORT 0x28 0x5247 //Animation (wererat)
+      SAY INITIAL_MEETING ~~ [T-WRA04A]
+      SAY MORALE ~~ [T-WRA08A]
+      SAY UNHAPPY_BREAKING_POINT ~~ [T-WRA08A]
+      SAY BATTLE_CRY1 ~~ [T-WRA01A]
+      SAY BATTLE_CRY2 ~~ [T-WRA02A]
+      SAY ATTACK1 ~~ [T-WRA03A]
+      SAY DAMAGE ~~ [T-WRA07A]
+      SAY DYING ~~ [T-WRA09A]
+      SAY SELECT_COMMON1 ~~ [T-WRA01A]
+      SAY SELECT_COMMON2 ~~ [T-WRA02A]
+      SAY SELECT_COMMON3 ~~ [T-WRA04B]
+    END
+  BUT_ONLY
+END
+
+ACTION_FOR_EACH nb IN ~wolfwo01~ ~%tsu%worg~ ~%tsu%worgar~ ~worgsu~ BEGIN
+  ACTION_IF FILE_EXISTS_IN_GAME ~%nb%.cre~ BEGIN //Worgs
+    COPY_EXISTING ~%nb%.cre~ ~override~
+      PATCH_INCLUDE ~infinityanimations/lib/fj_cre_validity.tpp~
+      PATCH_IF vl BEGIN
+        PATCH_INCLUDE ~infinityanimations/lib/fj_cre_reindex.tpp~
+        WRITE_SHORT 0x28 0x5262 //Animation (worg_iwd)
+        SAY INITIAL_MEETING ~~ [T-WOR04A]
+        SAY MORALE ~~ [T-WOR07A]
+        SAY UNHAPPY_BREAKING_POINT ~~ [T-WOR07A]
+        SAY BATTLE_CRY1 ~~ [T-WOR01A]
+        SAY BATTLE_CRY2 ~~ [T-WOR03B]
+        SAY BATTLE_CRY3 ~~ [T-WOR10A]
+        SAY ATTACK1 ~~ [T-WOR03A]
+        SAY DAMAGE ~~ [T-WOR08A]
+        SAY DYING ~~ [T-WOR09A]
+        SAY SELECT_COMMON1 ~~ [T-WOR02A]
+        SAY SELECT_COMMON2 ~~ [T-WOR04B]
+      END
+    BUT_ONLY
+  END
+END
+VERBOSE
+
+ACTION_FOR_EACH nb IN ~eldathh~ ~eldathyf~ BEGIN
+  ACTION_IF FILE_EXISTS_IN_GAME ~%nb%.cre~ BEGIN //Yuan-Ti Halfbreeds
+    COPY_EXISTING ~%nb%.cre~ ~override~
+      PATCH_IF SOURCE_SIZE > 0x2d3 BEGIN
+        WRITE_SHORT 0x28 0x5248 //Animation (yuan_ti_halfbreed)
+        SAY INITIAL_MEETING ~~ [T-YHB04A]
+        SAY MORALE ~~ [T-YHB08A]
+        SAY UNHAPPY_BREAKING_POINT ~~ [T-YHB08A]
+        SAY BATTLE_CRY1 ~~ [T-YHB01A]
+        SAY BATTLE_CRY2 ~~ [T-YHB01B]
+        SAY BATTLE_CRY3 ~~ [T-YHB02A]
+        SAY BATTLE_CRY4 ~~ [T-YHB08B]
+        SAY ATTACK1 ~~ [T-YHB03A]
+        SAY DAMAGE ~~ [T-YHB07A]
+        SAY DYING ~~ [T-YHB09A]
+        SAY SELECT_COMMON1 ~~ [T-YHB03B]
+        SAY SELECT_COMMON2 ~~ [T-YHB04B]
+        SAY SELECT_COMMON3 ~~ [T-YHB07B]
+        SAY CRITICAL_MISS ~~ [T-YHB10A]
+        SAY SPELL_DISRUPTED ~~ [T-YHB10B]
+      END
+    BUT_ONLY
+  END
+END
+
+//! More Neverwinter Nights Animations //////////////////////////////////////
+BEGIN @61 //More Neverwinter Nights Animations
+DESIGNATED 650
+REQUIRE_COMPONENT ~setup-infinityanimations.tp2~ 0 @26 //This component requires the main component.
+
+ACTION_IF NOT MOD_IS_INSTALLED ~setup-infinityanimations.tp2~ 0 BEGIN
+  FAIL @26 //This component requires the main component.
+END
+
+SILENT
+ACTION_FOR_EACH nb IN ~ntdraagi~ ~nthaebal~ BEGIN
+  ACTION_IF FILE_EXISTS_IN_GAME ~%nb%.cre~ BEGIN //Scythe Wielders
+    COPY_EXISTING ~%nb%.cre~ ~override~
+      PATCH_INCLUDE ~infinityanimations/lib/fj_cre_validity.tpp~
+      PATCH_IF vl BEGIN
+        PATCH_INCLUDE ~infinityanimations/lib/fj_cre_reindex.tpp~
+        WRITE_SHORT 0x28 0x526d //Animation (amel_pc_nwn)
+        SAY INITIAL_MEETING @575 //What do you want? [T-AML02A]
+        SAY BATTLE_CRY1 @576 //Taste steel! [T-AML01A]
+        SAY BATTLE_CRY2 @577 //Die as you must! [T-AML01B]
+        SAY DAMAGE ~~ [T-AML08]
+        SAY DYING ~~ [T-AML09]
+        SAY SELECT_COMMON1 @575 //What do you want? [T-AML02A]
+        SAY SELECT_COMMON2 @578 //Yes? [T-AML02B]
+      END
+    BUT_ONLY
+  END
+END
+
+ACTION_IF FILE_EXISTS_IN_GAME ~beetbomb.cre~ BEGIN //Bombardier Beetle (BP)
+  COPY_EXISTING ~beetbomb.cre~ ~override~
+    PATCH_IF SOURCE_SIZE > 0x2d3 BEGIN
+      WRITE_SHORT 0x28 0x5291 //Animation (beetle_bombardier_nwn)
+      WRITE_BYTE 0x272 104 //Race (crawler)
+      WRITE_BYTE 0x273 108 //Class (crawler)
+    END
+  BUT_ONLY
+END
+
+ACTION_FOR_EACH nb IN ~basgrt01~ ~%tsu%basilg~ ~basilgsu~ ~%tsb%asilmut~ ~%tsb%asilnad~ BEGIN
+  ACTION_IF FILE_EXISTS_IN_GAME ~%nb%.cre~ BEGIN //Greater Basilisks
+    COPY_EXISTING ~%nb%.cre~ ~override~
+      PATCH_INCLUDE ~infinityanimations/lib/fj_cre_validity.tpp~
+      PATCH_IF vl BEGIN
+        PATCH_INCLUDE ~infinityanimations/lib/fj_cre_reindex.tpp~
+        WRITE_SHORT 0x28 0x557b //Animation (basilisk_nwn)
+      END
+    BUT_ONLY
+  END
+END
+
+ACTION_FOR_EACH nb IN ~obsmod01~ ~psmodron~ BEGIN
+  ACTION_IF FILE_EXISTS_IN_GAME ~%nb%.cre~ BEGIN //Modrons
+    COPY_EXISTING ~%nb%.cre~ ~override~
+      PATCH_INCLUDE ~infinityanimations/lib/fj_cre_validity.tpp~
+      PATCH_IF vl BEGIN
+        PATCH_INCLUDE ~infinityanimations/lib/fj_cre_reindex.tpp~
+        WRITE_SHORT 0x28 0x5b02 //Animation (modron_round)
+        SAY BATTLE_CRY1 ~~ [T-MOD01A]
+        SAY BATTLE_CRY2 ~~ [T-MOD01B]
+        SAY ATTACK1 ~~ [T-MOD03]
+        SAY DAMAGE ~~ [T-MOD07]
+        SAY DYING ~~ [T-MOD09]
+        SAY SELECT_COMMON1 ~~ [T-MOD02A]
+        SAY SELECT_COMMON2 ~~ [T-MOD02B]
+      END
+    BUT_ONLY
+  END
+END
+
+ACTION_FOR_EACH nb IN ~agdisp11~ ~agdisp12~ ~agdisp13~ ~agdispl1~ ~agdispl2~ BEGIN
+  ACTION_IF FILE_EXISTS_IN_GAME ~%nb%.cre~ BEGIN //Displacer Beasts (AjocMod)
+    COPY_EXISTING ~%nb%.cre~ ~override~
+      PATCH_INCLUDE ~infinityanimations/lib/fj_cre_validity.tpp~
+      PATCH_IF vl BEGIN
+        PATCH_INCLUDE ~infinityanimations/lib/fj_cre_reindex.tpp~
+        WRITE_SHORT 0x28 0x5b07 //Animation (displacer_beast)
+        SAY BATTLE_CRY1 ~~ [T-DIS01A]
+        SAY BATTLE_CRY2 ~~ [T-DIS01B]
+        SAY BATTLE_CRY3 ~~ [T-DIS01C]
+        SAY ATTACK1 ~~ [T-DIS03]
+        SAY DAMAGE ~~ [T-DIS07]
+        SAY DYING ~~ [T-DIS09]
+        SAY SELECT_COMMON1 ~~ [T-DIS02A]
+        SAY SELECT_COMMON2 ~~ [T-DIS02B]
+        SAY SELECT_COMMON3 ~~ [T-DIS02C]
+        SAY CRITICAL_MISS ~~ [T-DIS05]
+        SAY SPELL_DISRUPTED ~~ [T-DIS06]
+      END
+    BUT_ONLY
+  END
+END
+
+ACTION_FOR_EACH nb IN ~ggiantf2~ ~giantf01~ ~gorfirg~ ~hgmag02~ ~sarfaki2~ ~yscara03~ ~ysfire02~ BEGIN
+  ACTION_IF FILE_EXISTS_IN_GAME ~%nb%.cre~ BEGIN //Fire Giant Females
+    COPY_EXISTING ~%nb%.cre~ ~override~
+      PATCH_INCLUDE ~infinityanimations/lib/fj_cre_validity.tpp~
+      PATCH_IF vl BEGIN
+        PATCH_INCLUDE ~infinityanimations/lib/fj_cre_reindex.tpp~
+        WRITE_SHORT 0x28 0x5c03 //Animation (fire_giant_female)
+        WRITE_BYTE 0x237 2 //Sex (female)
+        WRITE_BYTE 0x271 5 //General (gianthumanoid)
+        WRITE_BYTE 0x275 2 //Gender (female)
+        WRITE_BYTE 0x27b 19 //Alignment (lawful evil by definition)
+      END
+    BUT_ONLY
+  END
+END
+
+ACTION_FOR_EACH nb IN ~brefr2~ ~frostgi~ ~hillfro2~ BEGIN
+  ACTION_IF FILE_EXISTS_IN_GAME ~%nb%.cre~ BEGIN //Frost Giant Females
+    COPY_EXISTING ~%nb%.cre~ ~override~
+      PATCH_INCLUDE ~infinityanimations/lib/fj_cre_validity.tpp~
+      PATCH_IF vl BEGIN
+        PATCH_INCLUDE ~infinityanimations/lib/fj_cre_reindex.tpp~
+        WRITE_SHORT 0x28 0x5c04 //Animation (frost_giant_female)
+        WRITE_BYTE 0x237 2 //Sex (female)
+        WRITE_BYTE 0x271 5 //General (gianthumanoid)
+        WRITE_BYTE 0x275 2 //Gender (female)
+      END
+    BUT_ONLY
+  END
+END
+VERBOSE
+
+//! More Planescape: Torment Animations /////////////////////////////////////
+BEGIN @65 //25% of relevant non-joinables
+SUBCOMPONENT @63 (MOD_IS_INSTALLED ~setup-infinityanimations.tp2~ 0) //More Planescape: Torment Animations
+DESIGNATED 710
+REQUIRE_COMPONENT ~setup-infinityanimations.tp2~ 0 @26 //This component requires the main component.
+
+ACTION_IF NOT MOD_IS_INSTALLED ~setup-infinityanimations.tp2~ 0 BEGIN
+  FAIL @26 //This component requires the main component.
+END
+OUTER_SET rmp = 1
+INCLUDE ~infinityanimations/lib/t-pstanims.tpa~
+
+BEGIN @66 //50% of relevant non-joinables
+SUBCOMPONENT @63 (MOD_IS_INSTALLED ~setup-infinityanimations.tp2~ 0) //More Planescape: Torment Animations
+DESIGNATED 720
+REQUIRE_COMPONENT ~setup-infinityanimations.tp2~ 0 @26 //This component requires the main component.
+
+ACTION_IF NOT MOD_IS_INSTALLED ~setup-infinityanimations.tp2~ 0 BEGIN
+  FAIL @26 //This component requires the main component.
+END
+OUTER_SET rmp = 2
+INCLUDE ~infinityanimations/lib/t-pstanims.tpa~
+
+BEGIN @67 //75% of relevant non-joinables
+SUBCOMPONENT @63 (MOD_IS_INSTALLED ~setup-infinityanimations.tp2~ 0) //More Planescape: Torment Animations
+DESIGNATED 730
+REQUIRE_COMPONENT ~setup-infinityanimations.tp2~ 0 @26 //This component requires the main component.
+
+ACTION_IF NOT MOD_IS_INSTALLED ~setup-infinityanimations.tp2~ 0 BEGIN
+  FAIL @26 //This component requires the main component.
+END
+OUTER_SET rmp = 3
+INCLUDE ~infinityanimations/lib/t-pstanims.tpa~
+
+BEGIN @68 //All relevant non-joinables
+SUBCOMPONENT @63 (MOD_IS_INSTALLED ~setup-infinityanimations.tp2~ 0) //More Planescape: Torment Animations
+DESIGNATED 740
+REQUIRE_COMPONENT ~setup-infinityanimations.tp2~ 0 @26 //This component requires the main component.
+
+ACTION_IF NOT MOD_IS_INSTALLED ~setup-infinityanimations.tp2~ 0 BEGIN
+  FAIL @26 //This component requires the main component.
+END
+OUTER_SET rmp = 0
+INCLUDE ~infinityanimations/lib/t-pstanims.tpa~
+
+//! Moinesse's Avatars for IA ///////////////////////////////////////////////
+BEGIN @65 //25% of relevant non-joinables
+SUBCOMPONENT @69 (MOD_IS_INSTALLED ~setup-infinityanimations.tp2~ 0) //Moinesse's Avatars for IA
+DESIGNATED 7000
+REQUIRE_COMPONENT ~setup-infinityanimations.tp2~ 0 @26 //This component requires the main component.
+
+ACTION_IF NOT MOD_IS_INSTALLED ~setup-infinityanimations.tp2~ 0 BEGIN
+  FAIL @26 //This component requires the main component.
+END
+OUTER_SET rma = 1
+INCLUDE ~infinityanimations/lib/t-moines.tpa~
+
+BEGIN @66 //50% of relevant non-joinables
+SUBCOMPONENT @69 (MOD_IS_INSTALLED ~setup-infinityanimations.tp2~ 0) //Moinesse's Avatars for IA
+DESIGNATED 7010
+REQUIRE_COMPONENT ~setup-infinityanimations.tp2~ 0 @26 //This component requires the main component.
+
+ACTION_IF NOT MOD_IS_INSTALLED ~setup-infinityanimations.tp2~ 0 BEGIN
+  FAIL @26 //This component requires the main component.
+END
+OUTER_SET rma = 2
+INCLUDE ~infinityanimations/lib/t-moines.tpa~
+
+BEGIN @67 //75% of relevant non-joinables
+SUBCOMPONENT @69 (MOD_IS_INSTALLED ~setup-infinityanimations.tp2~ 0) //Moinesse's Avatars for IA
+DESIGNATED 7020
+REQUIRE_COMPONENT ~setup-infinityanimations.tp2~ 0 @26 //This component requires the main component.
+
+ACTION_IF NOT MOD_IS_INSTALLED ~setup-infinityanimations.tp2~ 0 BEGIN
+  FAIL @26 //This component requires the main component.
+END
+OUTER_SET rma = 3
+INCLUDE ~infinityanimations/lib/t-moines.tpa~
+
+BEGIN @68 //All relevant non-joinables
+SUBCOMPONENT @69 (MOD_IS_INSTALLED ~setup-infinityanimations.tp2~ 0) //Moinesse's Avatars for IA
+DESIGNATED 7030
+REQUIRE_COMPONENT ~setup-infinityanimations.tp2~ 0 @26 //This component requires the main component.
+
+ACTION_IF NOT MOD_IS_INSTALLED ~setup-infinityanimations.tp2~ 0 BEGIN
+  FAIL @26 //This component requires the main component.
+END
+OUTER_SET rma = 0
+INCLUDE ~infinityanimations/lib/t-moines.tpa~
+
+//! BG1 Animations for NPCs /////////////////////////////////////////////////
+BEGIN @74 //25% of relevant creatures
+SUBCOMPONENT @71 (MOD_IS_INSTALLED ~setup-infinityanimations.tp2~ 0) //BG1 Animations for NPCs
+DESIGNATED 8000
+REQUIRE_COMPONENT ~setup-infinityanimations.tp2~ 0 @26 //This component requires the main component.
+
+ACTION_IF NOT MOD_IS_INSTALLED ~setup-infinityanimations.tp2~ 0 BEGIN
+  FAIL @26 //This component requires the main component.
+END
+PRINT @73 //Patching character-based creatures (this may take a while) ...
+OUTER_SET rna = 1
+INCLUDE ~infinityanimations/lib/t-bg1anims.tpa~
+
+BEGIN @75 //50% of relevant creatures
+SUBCOMPONENT @71 (MOD_IS_INSTALLED ~setup-infinityanimations.tp2~ 0) //BG1 Animations for NPCs
+DESIGNATED 8010
+REQUIRE_COMPONENT ~setup-infinityanimations.tp2~ 0 @26 //This component requires the main component.
+
+ACTION_IF NOT MOD_IS_INSTALLED ~setup-infinityanimations.tp2~ 0 BEGIN
+  FAIL @26 //This component requires the main component.
+END
+PRINT @73 //Patching character-based creatures (this may take a while) ...
+OUTER_SET rna = 2
+INCLUDE ~infinityanimations/lib/t-bg1anims.tpa~
+
+BEGIN @76 //75% of relevant creatures
+SUBCOMPONENT @71 (MOD_IS_INSTALLED ~setup-infinityanimations.tp2~ 0) //BG1 Animations for NPCs
+DESIGNATED 8020
+REQUIRE_COMPONENT ~setup-infinityanimations.tp2~ 0 @26 //This component requires the main component.
+
+ACTION_IF NOT MOD_IS_INSTALLED ~setup-infinityanimations.tp2~ 0 BEGIN
+  FAIL @26 //This component requires the main component.
+END
+PRINT @73 //Patching character-based creatures (this may take a while) ...
+OUTER_SET rna = 3
+INCLUDE ~infinityanimations/lib/t-bg1anims.tpa~
+
+BEGIN @77 //Most relevant creatures
+SUBCOMPONENT @71 (MOD_IS_INSTALLED ~setup-infinityanimations.tp2~ 0) //BG1 Animations for NPCs
+DESIGNATED 8030
+REQUIRE_COMPONENT ~setup-infinityanimations.tp2~ 0 @26 //This component requires the main component.
+
+ACTION_IF NOT MOD_IS_INSTALLED ~setup-infinityanimations.tp2~ 0 BEGIN
+  FAIL @26 //This component requires the main component.
+END
+PRINT @73 //Patching character-based creatures (this may take a while) ...
+OUTER_SET rna = 0
+INCLUDE ~infinityanimations/lib/t-bg1anims.tpa~
+
+//! Creature References /////////////////////////////////////////////////////
+BEGIN @105 //Fix Area Creature References
+REQUIRE_COMPONENT ~setup-infinityanimations.tp2~ 0 @26 //This component requires the main component.
+DESIGNATED 9000
+ACTION_IF NOT MOD_IS_INSTALLED ~setup-infinityanimations.tp2~ 0 BEGIN
+  FAIL @26 //This component requires the main component.
+END
+PRINT @106 //Correcting area creature references (this may take a while) ...
+INCLUDE ~infinityanimations/lib/t-arecre.tpa~
+
+//! BG1 Animations for Exported PCs /////////////////////////////////////////
+BEGIN @79 //Prompt for each PC
+SUBCOMPONENT @78 (MOD_IS_INSTALLED ~setup-infinityanimations.tp2~ 0) //BG1 Animations for Exported PCs
+DESIGNATED 9500
+REQUIRE_COMPONENT ~setup-infinityanimations.tp2~ 0 @26 //This component requires the main component.
+
+ACTION_IF NOT MOD_IS_INSTALLED ~setup-infinityanimations.tp2~ 0 BEGIN
+  FAIL @26 //This component requires the main component.
+END
+OUTER_SET t-mod = 0
+INCLUDE ~infinityanimations/lib/t-bg1chars.tpa~
+
+BEGIN @80 //Prompt for problematic PCs
+SUBCOMPONENT @78 (MOD_IS_INSTALLED ~setup-infinityanimations.tp2~ 0) //BG1 Animations for Exported PCs
+DESIGNATED 9510
+REQUIRE_COMPONENT ~setup-infinityanimations.tp2~ 0 @26 //This component requires the main component.
+
+ACTION_IF NOT MOD_IS_INSTALLED ~setup-infinityanimations.tp2~ 0 BEGIN
+  FAIL @26 //This component requires the main component.
+END
+OUTER_SET t-mod = 1
+INCLUDE ~infinityanimations/lib/t-bg1chars.tpa~
+
+BEGIN @81 //Patch all PCs without prompting
+SUBCOMPONENT @78 (MOD_IS_INSTALLED ~setup-infinityanimations.tp2~ 0) //BG1 Animations for Exported PCs
+DESIGNATED 9520
+REQUIRE_COMPONENT ~setup-infinityanimations.tp2~ 0 @26 //This component requires the main component.
+
+ACTION_IF NOT MOD_IS_INSTALLED ~setup-infinityanimations.tp2~ 0 BEGIN
+  FAIL @26 //This component requires the main component.
+END
+OUTER_SET t-mod = 2
+INCLUDE ~infinityanimations/lib/t-bg1chars.tpa~
+
+//! BG1 Animations for Saved Games //////////////////////////////////////////
+BEGIN @83 //Prompt for each character
+SUBCOMPONENT @82 (MOD_IS_INSTALLED ~setup-infinityanimations.tp2~ 0) //BG1 Animations for Saved Games
+DESIGNATED 9600
+REQUIRE_COMPONENT ~setup-infinityanimations.tp2~ 0 @26 //This component requires the main component.
+
+ACTION_IF NOT MOD_IS_INSTALLED ~setup-infinityanimations.tp2~ 0 BEGIN
+  FAIL @26 //This component requires the main component.
+END
+OUTER_SET t-mod = 0
+OUTER_SET t-agg = 1
+INCLUDE ~infinityanimations/lib/t-bg1sav.tpa~
+
+BEGIN @84 //Prompt for problematic characters
+SUBCOMPONENT @82 (MOD_IS_INSTALLED ~setup-infinityanimations.tp2~ 0) //BG1 Animations for Saved Games
+DESIGNATED 9610
+REQUIRE_COMPONENT ~setup-infinityanimations.tp2~ 0 @26 //This component requires the main component.
+
+ACTION_IF NOT MOD_IS_INSTALLED ~setup-infinityanimations.tp2~ 0 BEGIN
+  FAIL @26 //This component requires the main component.
+END
+OUTER_SET t-mod = 1
+OUTER_SET t-agg = 1
+INCLUDE ~infinityanimations/lib/t-bg1sav.tpa~
+
+BEGIN @85 //Patch all characters without prompting
+SUBCOMPONENT @82 (MOD_IS_INSTALLED ~setup-infinityanimations.tp2~ 0) //BG1 Animations for Saved Games
+DESIGNATED 9620
+REQUIRE_COMPONENT ~setup-infinityanimations.tp2~ 0 @26 //This component requires the main component.
+
+ACTION_IF NOT MOD_IS_INSTALLED ~setup-infinityanimations.tp2~ 0 BEGIN
+  FAIL @26 //This component requires the main component.
+END
+OUTER_SET t-mod = 2
+OUTER_SET t-agg = 1
+INCLUDE ~infinityanimations/lib/t-bg1sav.tpa~
+
+//! Saved Game Animation Fixer //////////////////////////////////////////////
+BEGIN @87 //Correct only LOW animations
+SUBCOMPONENT @86 (MOD_IS_INSTALLED ~setup-infinityanimations.tp2~ 0) //Saved Game Animation Fixer
+DESIGNATED 9900
+REQUIRE_COMPONENT ~setup-infinityanimations.tp2~ 0 @26 //This component requires the main component.
+ACTION_IF NOT MOD_IS_INSTALLED ~setup-infinityanimations.tp2~ 0 BEGIN
+  FAIL @26 //This component requires the main component.
+END
+OUTER_SET t-mod = 2
+OUTER_SET t-agg = 0
+INCLUDE ~infinityanimations/lib/t-savfix.tpa~
+
+BEGIN @88 //Correct all animations IA has changed
+SUBCOMPONENT @86 (MOD_IS_INSTALLED ~setup-infinityanimations.tp2~ 0) //Saved Game Animation Fixer
+DESIGNATED 9910
+REQUIRE_COMPONENT ~setup-infinityanimations.tp2~ 0 @26 //This component requires the main component.
+ACTION_IF NOT MOD_IS_INSTALLED ~setup-infinityanimations.tp2~ 0 BEGIN
+  FAIL @26 //This component requires the main component.
+END
+OUTER_SET t-mod = 2
+OUTER_SET t-agg = 1
+INCLUDE ~infinityanimations/lib/t-savfix.tpa~
