@@ -19,7 +19,7 @@
 [<img alt="Webpage" src="https://raw.githubusercontent.com/Spellhold-Studios/Spellhold-Studios.github.io/main/assets/buttons/webpage.svg" height="28">](https://Spellhold-Studios.github.io/index.html)&nbsp;
 [<img alt="Discord" src="https://raw.githubusercontent.com/Spellhold-Studios/Spellhold-Studios.github.io/main/assets/buttons/discord-blue.svg" height="28">](https://discord.gg/pE2Njbdb2a)
 
-### Introduction
+## Introduction
 
 This mod patches Baldur's Gate II: Throne of Bhaal to support additional creature and character animations (referred to as "animation slots"). It also offers a dynamic automated process for claiming new animation slots. Thus, it acts as a central hub, usable by anyone who would like to add animation entries to the game without being bogged down by issues of mod conflicts and incompatibilities.
 
@@ -29,7 +29,7 @@ An important feature for players who use several large mods (known as "megamods"
 
 *Please check the complete [Readme](https://Spellhold-Studios.github.io/readmes/infinity-animations/infinityanimations.html) to learn more about this mod before installation.*
 
-### Key features
+## Key features
 
 - Restores Baldur's Gate I character animations
 - Improves paperdoll support for existing animations
@@ -39,7 +39,7 @@ An important feature for players who use several large mods (known as "megamods"
 - Offers GUI support for adding new animations
 - Lets you watch as the percentage of free animation entries refuses to go down
 
-### Credits
+## Credits
 
 &nbsp;&nbsp; **Author**  
 &nbsp;&nbsp; Erephine
