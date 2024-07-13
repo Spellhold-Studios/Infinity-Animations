@@ -1,0 +1,8 @@
+blank_issues_enabled: true
+contact_links:
+  - name: Discussions
+    url: https://github.com/Spellhold-Studios/Infinity-Animations/discussions
+    about: Ask a question, give a suggestion or share your opinion in discussions.
+  - name: GitHub Support
+    url: https://support.github.com/contact
+    about: Contact Support if you need help with your GitHub account.
