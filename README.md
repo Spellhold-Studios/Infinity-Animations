@@ -1,4 +1,8 @@
-<img align="right" alt="SHS logo" src="https://raw.githubusercontent.com/Spellhold-Studios/Spellhold-Studios.github.io/main/assets/images/shs-corner-logo.png" width="22%">
+<picture>
+  <source media="(prefers-color-scheme: dark)" srcset="https://raw.githubusercontent.com/Spellhold-Studios/Spellhold-Studios.github.io/main/assets/images/shs-corner-logo.png" />
+  <source media="(prefers-color-scheme: light)" srcset="https://raw.githubusercontent.com/Spellhold-Studios/Spellhold-Studios.github.io/main/assets/images/shs-corner-logo.png" />
+  <img align="right" alt="SHS logo" src="https://raw.githubusercontent.com/Spellhold-Studios/Spellhold-Studios.github.io/main/assets/images/shs-corner-logo.png" width="22%">
+</picture>
 
 [![Release](https://img.shields.io/github/v/release/Spellhold-Studios/Infinity-Animations?include_prereleases&color=%2392403a)](https://github.com/Spellhold-Studios/Infinity-Animations/releases/latest)
 [![Published](https://img.shields.io/github/release-date/Spellhold-Studios/Infinity-Animations?display_date=published_at&label=published&color=%2392403a)](https://github.com/Spellhold-Studios/Infinity-Animations/releases/latest)
