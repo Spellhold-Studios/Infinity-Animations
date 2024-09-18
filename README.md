@@ -56,6 +56,3 @@ An important feature for players who use several large mods (known as "megamods"
 
 &nbsp;&nbsp; **Maintainer**  
 &nbsp;&nbsp; skellytz
-
-&nbsp;&nbsp; **Contributors**  
-&nbsp;&nbsp; [![Contributors Display](https://badges.pufler.dev/contributors/Spellhold-Studios/Infinity-Animations?size=29&padding=5&perRow=15&bots=false)](https://github.com/Spellhold-Studios/Infinity-Animations/graphs/contributors)
