@@ -45,14 +45,19 @@ An important feature for players who use several large mods (known as "megamods"
 
 ## Credits
 
-&nbsp;&nbsp; **Author**  
-&nbsp;&nbsp; Erephine
+#### Author
 
-&nbsp;&nbsp; **WeiDU coding**  
-&nbsp;&nbsp; Miloch
+- Erephine
 
-&nbsp;&nbsp; **Assistance**  
-&nbsp;&nbsp; Arkenor and SergIS
+#### WeiDU coding
 
-&nbsp;&nbsp; **Maintainer**  
-&nbsp;&nbsp; skellytz
+- Miloch
+
+#### Assistance
+
+- Arkenor
+- SergIS
+
+#### Maintainer
+
+- skellytz
