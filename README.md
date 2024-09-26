@@ -45,19 +45,21 @@ An important feature for players who use several large mods (known as "megamods"
 
 ## Credits
 
-#### Author
+<!-- double white space after each credits **Heading** -->
+
+**Author**  
 
 - Erephine
 
-#### WeiDU coding
+**WeiDU coding**  
 
 - Miloch
 
-#### Assistance
+**Assistance**  
 
 - Arkenor
 - SergIS
 
-#### Maintainer
+**Maintainer**  
 
 - skellytz
