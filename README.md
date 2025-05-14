@@ -1,7 +1,6 @@
 [![Release](https://img.shields.io/github/v/release/Spellhold-Studios/Infinity-Animations?include_prereleases&color=%2392403a)](https://github.com/Spellhold-Studios/Infinity-Animations/releases/latest)
 [![Published](https://img.shields.io/github/release-date/Spellhold-Studios/Infinity-Animations?display_date=published_at&label=published&color=%2392403a)](https://github.com/Spellhold-Studios/Infinity-Animations/releases/latest)
 [![Downloads](https://img.shields.io/github/downloads/Spellhold-Studios/Infinity-Animations/total?color=%2392403a)](https://github.com/Spellhold-Studios/Infinity-Animations/releases)
-[![Views](https://badges.pufler.dev/visits/Spellhold-Studios/Infinity-Animations?label=views&color=%2392403a)](https://github.com/Spellhold-Studios/Infinity-Animations/releases)
 [![Platform](https://img.shields.io/badge/platform-Windows%20%a0%20Linux-%2392403a)](https://github.com/Spellhold-Studios/template-basic/releases)
 [![Games](https://img.shields.io/badge/games-BG2%20%a0%20BGT-%2392403a)](https://github.com/Spellhold-Studios/Infinity-Animations/releases)
 [![Language](https://img.shields.io/badge/language-en-%2392403a)](https://github.com/Spellhold-Studios/Infinity-Animations/releases)
